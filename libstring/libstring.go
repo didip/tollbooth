@@ -1,10 +1,12 @@
 package libstring
 
-func StringInSlice(list []string, needle string) bool {
-	for _, b := range list {
-		if b == needle {
-			return true
+func FlattenMapSliceString(mapSliceString map[string][]string, prefix string) []string {
+	result := make([]string, 0)
+
+	for key, slice := range mapSliceString {
+		for _, item := range slice {
+			result = append(result, prefix+":"+key+":"+item)
 		}
 	}
-	return false
+	return result
 }

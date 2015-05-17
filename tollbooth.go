@@ -3,6 +3,7 @@ package tollbooth
 
 import (
 	"fmt"
+	"github.com/didip/tollbooth/libstring"
 	"github.com/didip/tollbooth/storages"
 	"net/http"
 	"strings"
@@ -25,6 +26,10 @@ type RequestLimit struct {
 	// List of HTTP Methods to limit (GET, POST, PUT, etc.).
 	// Empty means limit all methods.
 	Methods []string
+
+	// List of HTTP headers to limit.
+	// Empty means skip headers checking.
+	Headers map[string][]string
 }
 
 // HTTPError is an error struct that returns both message and status code.
@@ -63,7 +68,22 @@ func LimitByIPHandler(storage storages.ICounterStorage, reqLimit *RequestLimit, 
 
 		var httpError *HTTPError
 
-		if reqLimit.Methods != nil {
+		if reqLimit.Methods != nil && reqLimit.Headers != nil {
+			// Limit by HTTP methods and headers.
+			for _, method := range reqLimit.Methods {
+				keyParts := append(defaultKeyParts, method)
+
+				for _, headerKeyParts := range libstring.FlattenMapSliceString(reqLimit.Headers, "headers") {
+					keyParts = append(keyParts, headerKeyParts)
+					httpError = LimitByKeyParts(storage, reqLimit, keyParts)
+					if httpError != nil {
+						http.Error(w, httpError.Message, httpError.StatusCode)
+						return
+					}
+				}
+			}
+
+		} else if reqLimit.Methods != nil {
 			// Limit by HTTP methods.
 			for _, method := range reqLimit.Methods {
 				keyParts := append(defaultKeyParts, method)
