@@ -26,7 +26,7 @@ func main() {
     storage := storages.NewInMemory()
 
     // 2. Create a request limiter per handler.
-    http.Handle("/", tollbooth.RemoteIPLimiterFuncHandler(storage, tollbooth.NewRequestLimit(1, time.Second), HelloHandler))
+    http.Handle("/", tollbooth.LimitByIPFuncHandler(storage, tollbooth.NewRequestLimit(1, time.Second), HelloHandler))
     http.ListenAndServe(":12345", nil)
 }
 ```
