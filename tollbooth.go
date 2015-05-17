@@ -3,7 +3,6 @@ package tollbooth
 
 import (
 	"fmt"
-	"github.com/didip/tollbooth/libstring"
 	"github.com/didip/tollbooth/storages"
 	"net/http"
 	"strings"
@@ -54,37 +53,42 @@ func LimitByKeyParts(storage storages.ICounterStorage, reqLimit *RequestLimit, k
 	return nil
 }
 
-// LimitByIP keeps track number of request made by REMOTE_ADDR and returns HTTPError when limit is exceeded.
-func LimitByIP(storage storages.ICounterStorage, reqLimit *RequestLimit, r *http.Request) *HTTPError {
-	remoteIP := r.Header.Get("REMOTE_ADDR")
-	path := r.URL.Path
-	return LimitByKeyParts(storage, reqLimit, []string{path, remoteIP})
-}
-
 // LimitByIPHandler is a middleware that limits by IP given http.Handler struct.
+// It keeps track number of request made by REMOTE_ADDR and returns HTTPError when limit is exceeded.
 func LimitByIPHandler(storage storages.ICounterStorage, reqLimit *RequestLimit, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
-		// 1. If reqLimit.Methods is not defined or empty, checks all HTTP methods.
-		// 2. If request method is included in reqLimit.Methods, check it.
-		if reqLimit.Methods == nil || len(reqLimit.Methods) == 0 || libstring.StringInSlice(reqLimit.Methods, r.Method) {
-			httpError := LimitByIP(storage, reqLimit, r)
+		remoteIP := r.Header.Get("REMOTE_ADDR")
+		path := r.URL.Path
+		defaultKeyParts := []string{remoteIP, path}
 
+		var httpError *HTTPError
+
+		if reqLimit.Methods != nil {
+			// Limit by HTTP methods.
+			for _, method := range reqLimit.Methods {
+				keyParts := append(defaultKeyParts, method)
+				httpError = LimitByKeyParts(storage, reqLimit, keyParts)
+				if httpError != nil {
+					http.Error(w, httpError.Message, httpError.StatusCode)
+					return
+				}
+			}
+		} else {
+			// Default limiter.
+			httpError = LimitByKeyParts(storage, reqLimit, defaultKeyParts)
 			if httpError != nil {
 				http.Error(w, httpError.Message, httpError.StatusCode)
 				return
-			} else {
-				next.ServeHTTP(w, r)
 			}
-		} else {
-			next.ServeHTTP(w, r)
 		}
 
+		// There's no rate-limit error, serve the next handler.
+		next.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(middle)
 }
 
 // LimitByIPFuncHandler is a middleware that limits by IP given request handler function.
 func LimitByIPFuncHandler(storage storages.ICounterStorage, reqLimit *RequestLimit, nextFunc func(http.ResponseWriter, *http.Request)) http.Handler {
-	next := http.HandlerFunc(nextFunc)
-	return LimitByIPHandler(storage, reqLimit, next)
+	return LimitByIPHandler(storage, reqLimit, http.HandlerFunc(nextFunc))
 }
