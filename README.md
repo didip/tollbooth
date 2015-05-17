@@ -6,7 +6,7 @@
 This is a generic middleware to rate limit HTTP requests.
 
 
-## Usage
+## Five Minutes Tutorial
 ```
 package main
 
@@ -26,7 +26,7 @@ func main() {
     storage := storages.NewInMemory()
 
     // 2. Create a request limiter per handler.
-    http.Handle("/", tollbooth.LimitByIPFuncHandler(storage, tollbooth.NewRequestLimit(1, time.Second), HelloHandler))
+    http.Handle("/", tollbooth.LimitFuncHandler(storage, tollbooth.NewLimiter(1, time.Second), HelloHandler))
     http.ListenAndServe(":12345", nil)
 }
 ```
