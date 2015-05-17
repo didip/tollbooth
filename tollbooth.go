@@ -1,4 +1,4 @@
-// Package tollbooth provides core rate-limit logic.
+// Package tollbooth provides rate limiting logic for HTTP request handler.
 package tollbooth
 
 import (
@@ -8,24 +8,29 @@ import (
 	"time"
 )
 
+// NewRequestLimit is a constructor for RequestLimit.
 func NewRequestLimit(max int64, ttl time.Duration) *RequestLimit {
 	return &RequestLimit{Max: max, TTL: ttl}
 }
 
+// RequestLimit is a config struct to limit a particular request handler.
 type RequestLimit struct {
 	Max int64
 	TTL time.Duration
 }
 
+// HTTPError is an error struct that returns both message and status code.
 type HTTPError struct {
 	Message    string
 	StatusCode int
 }
 
+// Error returns error message.
 func (httperror *HTTPError) Error() string {
 	return fmt.Sprintf("%v: %v", httperror.StatusCode, httperror.Message)
 }
 
+// LimitByRemoteIP keeps track number of request made by REMOTE_ADDR and returns HTTPError when limit is exceeded.
 func LimitByRemoteIP(storage storages.ICounterStorage, reqLimit *RequestLimit, r *http.Request) *HTTPError {
 	remoteIP := r.Header.Get("REMOTE_ADDR")
 	path := r.URL.Path
@@ -41,7 +46,7 @@ func LimitByRemoteIP(storage storages.ICounterStorage, reqLimit *RequestLimit, r
 	return nil
 }
 
-// RemoteIPLimiterHandler is a middleware that limits by RemoteIP.
+// RemoteIPLimiterHandler is a middleware that limits by RemoteIP given http.Handler struct.
 func RemoteIPLimiterHandler(storage storages.ICounterStorage, reqLimit *RequestLimit, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
 		httpError := LimitByRemoteIP(storage, reqLimit, r)
@@ -56,6 +61,7 @@ func RemoteIPLimiterHandler(storage storages.ICounterStorage, reqLimit *RequestL
 	return http.HandlerFunc(middle)
 }
 
+// RemoteIPLimiterHandler is a middleware that limits by RemoteIP given request handler function.
 func RemoteIPLimiterFuncHandler(storage storages.ICounterStorage, reqLimit *RequestLimit, nextFunc func(http.ResponseWriter, *http.Request)) http.Handler {
 	next := http.HandlerFunc(nextFunc)
 	return RemoteIPLimiterHandler(storage, reqLimit, next)
