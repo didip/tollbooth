@@ -1,4 +1,4 @@
-// Package tollbooth provides rate limiting logic for HTTP request handler.
+// Package tollbooth provides rate limiting logic to HTTP request handler.
 package tollbooth
 
 import (
@@ -32,7 +32,7 @@ func LimitByKeyParts(storage storages.ICounterStorage, limiter *config.Limiter, 
 	return nil
 }
 
-// LimitHandler is a middleware that limits by IP given http.Handler struct.
+// LimitHandler is a middleware that performs rate limiting given http.Handler struct.
 func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
 		remoteIP := r.Header.Get("REMOTE_ADDR")
@@ -92,7 +92,7 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 	return http.HandlerFunc(middle)
 }
 
-// LimitFuncHandler is a middleware that limits by IP given request handler function.
+// LimitFuncHandler is a middleware that performs rate limiting given request handler function.
 func LimitFuncHandler(storage storages.ICounterStorage, limiter *config.Limiter, nextFunc func(http.ResponseWriter, *http.Request)) http.Handler {
 	return LimitHandler(storage, limiter, http.HandlerFunc(nextFunc))
 }

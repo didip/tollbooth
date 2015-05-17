@@ -1,3 +1,4 @@
+// Package libstring provides string related functions.
 package libstring
 
 func FlattenMapSliceString(mapSliceString map[string][]string, prefix string, separator string) []string {

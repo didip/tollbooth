@@ -1,4 +1,3 @@
-// Package storages store rate counters.
 package storages
 
 import (

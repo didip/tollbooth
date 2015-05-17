@@ -1,3 +1,4 @@
+// Package storages provides various mechanism to store limit counters.
 package storages
 
 import (
