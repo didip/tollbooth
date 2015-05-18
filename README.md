@@ -40,6 +40,18 @@ func main() {
     * Remote address, request path, and request methods.
 
     * Remote address, request path, request methods, and custom headers.
+        ```
+        limiter := tollbooth.NewLimiter(1, time.Second)
+
+        // Limit only GET and POST requests.
+        limiter.Methods = []string{"GET", "POST"}
+
+        // Limit request headers containing certain values.
+        // Usually, you prefetched these values from the database.
+        limiter.Headers = make(map[string][]string)
+        limiter.Headers["X-Access-Token"] = []string{"abc123", "xyz098"}
+        ```
+
 
 2. Each request handler can be rate limit individually.
 
