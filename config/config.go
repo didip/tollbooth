@@ -1,4 +1,4 @@
-// Package config provides data structure to configure rate limiter.
+// Package config provides data structure to configure rate-limiter.
 package config
 
 import (
@@ -25,7 +25,7 @@ type Limiter struct {
 	// Maximum number of requests to limit per duration.
 	Max int64
 
-	// Duration of rate limiter.
+	// Duration of rate-limiter.
 	TTL time.Duration
 
 	// List of HTTP Methods to limit (GET, POST, PUT, etc.).

@@ -3,7 +3,7 @@
 
 ## Tollbooth
 
-This is a generic middleware to rate limit HTTP requests.
+This is a generic middleware to rate-limit HTTP requests.
 
 
 ## Five Minutes Tutorial
@@ -33,7 +33,7 @@ func main() {
 
 ## Features
 
-1. Rate limit by:
+1. Rate-limit by:
 
     * Remote address & request path.
 
@@ -59,7 +59,7 @@ func main() {
         ```
 
 
-2. Each request handler can be rate limit individually.
+2. Each request handler can be rate-limited individually.
 
 3. Compose your own middlware by using `LimitByKeyParts()`.
 
