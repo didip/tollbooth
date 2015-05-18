@@ -8,14 +8,14 @@ import (
 func TestCRUD(t *testing.T) {
 	inmem := New()
 
-	key := "/|127.0.0.1"
+	key := "127.0.0.1|/"
 
 	count, exists := inmem.Get(key)
 	if exists || count > 0 {
 		t.Errorf("Expected empty inmem to return no count")
 	}
 
-	inmem.IncrBy("/|127.0.0.1", int64(1), time.Second)
+	inmem.IncrBy("127.0.0.1|/", int64(1), time.Second)
 	count, exists = inmem.Get(key)
 	if !exists {
 		t.Errorf("Expected inmem to return count for key: %v", key)
