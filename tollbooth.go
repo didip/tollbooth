@@ -1,4 +1,4 @@
-// Package tollbooth provides rate limiting logic to HTTP request handler.
+// Package tollbooth provides rate-limiting logic to HTTP request handler.
 package tollbooth
 
 import (
@@ -8,7 +8,6 @@ import (
 
 	"github.com/didip/tollbooth/config"
 	"github.com/didip/tollbooth/errors"
-	"github.com/didip/tollbooth/libstring"
 	"github.com/didip/tollbooth/storages"
 )
 
@@ -35,7 +34,7 @@ func LimitByKeyParts(storage storages.ICounterStorage, limiter *config.Limiter, 
 	return nil
 }
 
-// LimitHandler is a middleware that performs rate limiting given http.Handler struct.
+// LimitHandler is a middleware that performs rate-limiting given http.Handler struct.
 func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
 		remoteIP := r.Header.Get("REMOTE_ADDR")
@@ -45,12 +44,41 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 		var httpError *errors.HTTPError
 
 		if limiter.Methods != nil && limiter.Headers != nil {
-			// Limit by HTTP methods and HTTP headers.
+			// Limit by HTTP methods and HTTP headers+values.
 			for _, method := range limiter.Methods {
-				keyParts := append(defaultKeyParts, method)
+				if r.Method == method {
+					keyParts := append(defaultKeyParts, method)
 
-				for _, headerKeyParts := range libstring.FlattenMapSliceString(limiter.Headers, "headers", ":") {
-					keyParts = append(keyParts, headerKeyParts)
+					for key, sliceValues := range limiter.Headers {
+						if (sliceValues == nil || len(sliceValues) <= 0) && r.Header.Get(key) != "" {
+							// If header values are empty, rate-limit all request with header `key`.
+							keyParts = append(keyParts, key)
+							httpError = LimitByKeyParts(storage, limiter, keyParts)
+							if httpError != nil {
+								http.Error(w, httpError.Message, httpError.StatusCode)
+								return
+							}
+
+						} else if len(sliceValues) > 0 && r.Header.Get(key) != "" {
+							// If header values are not empty, rate-limit all request with header `key` and values.
+							for _, value := range sliceValues {
+								keyParts = append(keyParts, key, value)
+								httpError = LimitByKeyParts(storage, limiter, keyParts)
+								if httpError != nil {
+									http.Error(w, httpError.Message, httpError.StatusCode)
+									return
+								}
+							}
+						}
+					}
+				}
+			}
+
+		} else if limiter.Methods != nil {
+			// Limit by HTTP methods.
+			for _, method := range limiter.Methods {
+				if r.Method == method {
+					keyParts := append(defaultKeyParts, method)
 					httpError = LimitByKeyParts(storage, limiter, keyParts)
 					if httpError != nil {
 						http.Error(w, httpError.Message, httpError.StatusCode)
@@ -59,29 +87,35 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 				}
 			}
 
-		} else if limiter.Methods != nil {
-			// Limit by HTTP methods only.
-			for _, method := range limiter.Methods {
-				keyParts := append(defaultKeyParts, method)
-				httpError = LimitByKeyParts(storage, limiter, keyParts)
-				if httpError != nil {
-					http.Error(w, httpError.Message, httpError.StatusCode)
-					return
-				}
-			}
 		} else if limiter.Headers != nil {
-			// Limit by HTTP headers only.
-			for _, headerKeyParts := range libstring.FlattenMapSliceString(limiter.Headers, "headers", ":") {
-				keyParts := append(defaultKeyParts, headerKeyParts)
-				httpError = LimitByKeyParts(storage, limiter, keyParts)
-				if httpError != nil {
-					http.Error(w, httpError.Message, httpError.StatusCode)
-					return
+			// Limit by HTTP headers+values.
+			for key, sliceValues := range limiter.Headers {
+				if (sliceValues == nil || len(sliceValues) <= 0) && r.Header.Get(key) != "" {
+					// If header values are empty, rate-limit all request with header `key`.
+					keyParts := append(defaultKeyParts, key)
+					httpError = LimitByKeyParts(storage, limiter, keyParts)
+					if httpError != nil {
+						http.Error(w, httpError.Message, httpError.StatusCode)
+						return
+					}
+
+				} else if len(sliceValues) > 0 && r.Header.Get(key) != "" {
+					// If header values are not empty, rate-limit all request with header `key` and values.
+					for _, value := range sliceValues {
+						keyParts := append(defaultKeyParts, key, value)
+						httpError = LimitByKeyParts(storage, limiter, keyParts)
+						if httpError != nil {
+							http.Error(w, httpError.Message, httpError.StatusCode)
+							return
+						}
+					}
 				}
 			}
 
-		} else {
-			// Default: Limit by remote IP and request path.
+		}
+
+		// Default: Limit by remote IP and request path.
+		if limiter.Methods == nil && limiter.Headers == nil {
 			httpError = LimitByKeyParts(storage, limiter, defaultKeyParts)
 			if httpError != nil {
 				http.Error(w, httpError.Message, httpError.StatusCode)
@@ -95,7 +129,7 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 	return http.HandlerFunc(middle)
 }
 
-// LimitFuncHandler is a middleware that performs rate limiting given request handler function.
+// LimitFuncHandler is a middleware that performs rate-limiting given request handler function.
 func LimitFuncHandler(storage storages.ICounterStorage, limiter *config.Limiter, nextFunc func(http.ResponseWriter, *http.Request)) http.Handler {
 	return LimitHandler(storage, limiter, http.HandlerFunc(nextFunc))
 }
