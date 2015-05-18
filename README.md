@@ -35,13 +35,13 @@ func main() {
 
 1. Rate limit by:
 
-    * Remote address and request path.
+    * Remote address & request path.
 
-    * Remote address, request path, and request methods.
+    * Remote address, request path, & request methods.
 
-    * Remote address, request path, request methods, and custom headers.
+    * Remote address, request path, request methods, & custom headers.
 
-    * Remote address, request path, request methods, custom headers, and basic auth credentials.
+    * Remote address, request path, request methods, custom headers, & basic auth usernames.
         ```
         limiter := tollbooth.NewLimiter(1, time.Second)
 
