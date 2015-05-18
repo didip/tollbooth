@@ -35,4 +35,8 @@ type Limiter struct {
 	// List of HTTP headers to limit.
 	// Empty means skip headers checking.
 	Headers map[string][]string
+
+	// List of basic auth credentials to limit.
+	// The auth credential is in the form of tuple: []string{username, password}.
+	BasicAuths [][]string
 }

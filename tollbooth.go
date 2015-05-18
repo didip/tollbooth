@@ -43,16 +43,65 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 
 		var httpError *errors.HTTPError
 
-		if limiter.Methods != nil && limiter.Headers != nil {
-			// Limit by HTTP methods and HTTP headers+values.
+		if limiter.Methods != nil && limiter.Headers != nil && limiter.BasicAuths != nil {
+			// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.
 			for _, method := range limiter.Methods {
 				if r.Method == method {
-					keyParts := append(defaultKeyParts, method)
+					methodKeyParts := append(defaultKeyParts, method)
 
 					for key, sliceValues := range limiter.Headers {
 						if (sliceValues == nil || len(sliceValues) <= 0) && r.Header.Get(key) != "" {
 							// If header values are empty, rate-limit all request with header `key`.
-							keyParts = append(keyParts, key)
+							headerKeyParts := append(methodKeyParts, key)
+
+							username, password, ok := r.BasicAuth()
+							if ok {
+								for _, userPass := range limiter.BasicAuths {
+									if len(userPass) >= 2 && userPass[0] == username && userPass[1] == password {
+										keyParts := append(headerKeyParts, username, password)
+										httpError = LimitByKeyParts(storage, limiter, keyParts)
+										if httpError != nil {
+											http.Error(w, httpError.Message, httpError.StatusCode)
+											return
+										}
+									}
+								}
+							}
+
+						} else if len(sliceValues) > 0 && r.Header.Get(key) != "" {
+							// If header values are not empty, rate-limit all request with header `key` and values.
+							for _, value := range sliceValues {
+								headerKeyParts := append(methodKeyParts, key, value)
+
+								username, password, ok := r.BasicAuth()
+								if ok {
+									for _, userPass := range limiter.BasicAuths {
+										if len(userPass) >= 2 && userPass[0] == username && userPass[1] == password {
+											keyParts := append(headerKeyParts, username, password)
+											httpError = LimitByKeyParts(storage, limiter, keyParts)
+											if httpError != nil {
+												http.Error(w, httpError.Message, httpError.StatusCode)
+												return
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+		} else if limiter.Methods != nil && limiter.Headers != nil {
+			// Limit by HTTP methods and HTTP headers+values.
+			for _, method := range limiter.Methods {
+				if r.Method == method {
+					methodKeyParts := append(defaultKeyParts, method)
+
+					for key, sliceValues := range limiter.Headers {
+						if (sliceValues == nil || len(sliceValues) <= 0) && r.Header.Get(key) != "" {
+							// If header values are empty, rate-limit all request with header `key`.
+							keyParts := append(methodKeyParts, key)
 							httpError = LimitByKeyParts(storage, limiter, keyParts)
 							if httpError != nil {
 								http.Error(w, httpError.Message, httpError.StatusCode)
@@ -62,7 +111,29 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 						} else if len(sliceValues) > 0 && r.Header.Get(key) != "" {
 							// If header values are not empty, rate-limit all request with header `key` and values.
 							for _, value := range sliceValues {
-								keyParts = append(keyParts, key, value)
+								keyParts := append(methodKeyParts, key, value)
+								httpError = LimitByKeyParts(storage, limiter, keyParts)
+								if httpError != nil {
+									http.Error(w, httpError.Message, httpError.StatusCode)
+									return
+								}
+							}
+						}
+					}
+				}
+			}
+
+		} else if limiter.Methods != nil && limiter.BasicAuths != nil {
+			// Limit by HTTP methods and Basic Auth credentials.
+			for _, method := range limiter.Methods {
+				if r.Method == method {
+					methodKeyParts := append(defaultKeyParts, method)
+
+					username, password, ok := r.BasicAuth()
+					if ok {
+						for _, userPass := range limiter.BasicAuths {
+							if len(userPass) >= 2 && userPass[0] == username && userPass[1] == password {
+								keyParts := append(methodKeyParts, username, password)
 								httpError = LimitByKeyParts(storage, limiter, keyParts)
 								if httpError != nil {
 									http.Error(w, httpError.Message, httpError.StatusCode)
@@ -112,6 +183,21 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 				}
 			}
 
+		} else if limiter.BasicAuths != nil {
+			// Limit by Basic Auth credentials.
+			username, password, ok := r.BasicAuth()
+			if ok {
+				for _, userPass := range limiter.BasicAuths {
+					if len(userPass) >= 2 && userPass[0] == username && userPass[1] == password {
+						keyParts := append(defaultKeyParts, username, password)
+						httpError = LimitByKeyParts(storage, limiter, keyParts)
+						if httpError != nil {
+							http.Error(w, httpError.Message, httpError.StatusCode)
+							return
+						}
+					}
+				}
+			}
 		}
 
 		// Default: Limit by remote IP and request path.
