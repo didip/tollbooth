@@ -33,31 +33,22 @@ func main() {
 
 ## Features
 
-1. Rate-limit by:
+1. Rate-limit by remote IP, request path, request methods, custom headers, & basic auth usernames.
+    ```
+    limiter := tollbooth.NewLimiter(1, time.Second)
 
-    * Remote address & request path.
+    // Limit only GET and POST requests.
+    limiter.Methods = []string{"GET", "POST"}
 
-    * Remote address, request path, & request methods.
+    // Limit request headers containing certain values.
+    // Usually, you prefetched these values from the database.
+    limiter.Headers = make(map[string][]string)
+    limiter.Headers["X-Access-Token"] = []string{"abc123", "xyz098"}
 
-    * Remote address, request path, request methods, & custom headers.
-
-    * Remote address, request path, request methods, custom headers, & basic auth usernames.
-        ```
-        limiter := tollbooth.NewLimiter(1, time.Second)
-
-        // Limit only GET and POST requests.
-        limiter.Methods = []string{"GET", "POST"}
-
-        // Limit request headers containing certain values.
-        // Usually, you prefetched these values from the database.
-        limiter.Headers = make(map[string][]string)
-        limiter.Headers["X-Access-Token"] = []string{"abc123", "xyz098"}
-
-        // Limit based on certain basic auth usernames.
-        // Usually, you prefetched these values from the database.
-        limiter.BasicAuthUsers = []string{"bob", "joe", "didip"}
-        ```
-
+    // Limit based on certain basic auth usernames.
+    // Usually, you prefetched these values from the database.
+    limiter.BasicAuthUsers = []string{"bob", "joe", "didip"}
+    ```
 
 2. Each request handler can be rate-limited individually.
 
