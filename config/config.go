@@ -36,7 +36,6 @@ type Limiter struct {
 	// Empty means skip headers checking.
 	Headers map[string][]string
 
-	// List of basic auth credentials to limit.
-	// The auth credential is in the form of tuple: []string{username, password}.
-	BasicAuths [][]string
+	// List of basic auth usernames to limit.
+	BasicAuthUsers []string
 }

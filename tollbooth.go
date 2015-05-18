@@ -43,7 +43,7 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 
 		var httpError *errors.HTTPError
 
-		if limiter.Methods != nil && limiter.Headers != nil && limiter.BasicAuths != nil {
+		if limiter.Methods != nil && limiter.Headers != nil && limiter.BasicAuthUsers != nil {
 			// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.
 			for _, method := range limiter.Methods {
 				if r.Method == method {
@@ -54,11 +54,11 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 							// If header values are empty, rate-limit all request with header `key`.
 							headerKeyParts := append(methodKeyParts, key)
 
-							username, password, ok := r.BasicAuth()
+							username, _, ok := r.BasicAuth()
 							if ok {
-								for _, userPass := range limiter.BasicAuths {
-									if len(userPass) >= 2 && userPass[0] == username && userPass[1] == password {
-										keyParts := append(headerKeyParts, username, password)
+								for _, limiterUsername := range limiter.BasicAuthUsers {
+									if limiterUsername == username {
+										keyParts := append(headerKeyParts, username)
 										httpError = LimitByKeyParts(storage, limiter, keyParts)
 										if httpError != nil {
 											http.Error(w, httpError.Message, httpError.StatusCode)
@@ -73,11 +73,11 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 							for _, value := range sliceValues {
 								headerKeyParts := append(methodKeyParts, key, value)
 
-								username, password, ok := r.BasicAuth()
+								username, _, ok := r.BasicAuth()
 								if ok {
-									for _, userPass := range limiter.BasicAuths {
-										if len(userPass) >= 2 && userPass[0] == username && userPass[1] == password {
-											keyParts := append(headerKeyParts, username, password)
+									for _, limiterUsername := range limiter.BasicAuthUsers {
+										if limiterUsername == username {
+											keyParts := append(headerKeyParts, username)
 											httpError = LimitByKeyParts(storage, limiter, keyParts)
 											if httpError != nil {
 												http.Error(w, httpError.Message, httpError.StatusCode)
@@ -123,17 +123,17 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 				}
 			}
 
-		} else if limiter.Methods != nil && limiter.BasicAuths != nil {
+		} else if limiter.Methods != nil && limiter.BasicAuthUsers != nil {
 			// Limit by HTTP methods and Basic Auth credentials.
 			for _, method := range limiter.Methods {
 				if r.Method == method {
 					methodKeyParts := append(defaultKeyParts, method)
 
-					username, password, ok := r.BasicAuth()
+					username, _, ok := r.BasicAuth()
 					if ok {
-						for _, userPass := range limiter.BasicAuths {
-							if len(userPass) >= 2 && userPass[0] == username && userPass[1] == password {
-								keyParts := append(methodKeyParts, username, password)
+						for _, limiterUsername := range limiter.BasicAuthUsers {
+							if limiterUsername == username {
+								keyParts := append(methodKeyParts, username)
 								httpError = LimitByKeyParts(storage, limiter, keyParts)
 								if httpError != nil {
 									http.Error(w, httpError.Message, httpError.StatusCode)
@@ -183,13 +183,13 @@ func LimitHandler(storage storages.ICounterStorage, limiter *config.Limiter, nex
 				}
 			}
 
-		} else if limiter.BasicAuths != nil {
+		} else if limiter.BasicAuthUsers != nil {
 			// Limit by Basic Auth credentials.
-			username, password, ok := r.BasicAuth()
+			username, _, ok := r.BasicAuth()
 			if ok {
-				for _, userPass := range limiter.BasicAuths {
-					if len(userPass) >= 2 && userPass[0] == username && userPass[1] == password {
-						keyParts := append(defaultKeyParts, username, password)
+				for _, limiterUsername := range limiter.BasicAuthUsers {
+					if limiterUsername == username {
+						keyParts := append(defaultKeyParts, username)
 						httpError = LimitByKeyParts(storage, limiter, keyParts)
 						if httpError != nil {
 							http.Error(w, httpError.Message, httpError.StatusCode)

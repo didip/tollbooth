@@ -40,6 +40,8 @@ func main() {
     * Remote address, request path, and request methods.
 
     * Remote address, request path, request methods, and custom headers.
+
+    * Remote address, request path, request methods, custom headers, and basic auth credentials.
         ```
         limiter := tollbooth.NewLimiter(1, time.Second)
 
@@ -50,6 +52,10 @@ func main() {
         // Usually, you prefetched these values from the database.
         limiter.Headers = make(map[string][]string)
         limiter.Headers["X-Access-Token"] = []string{"abc123", "xyz098"}
+
+        // Limit based on certain basic auth usernames.
+        // Usually, you prefetched these values from the database.
+        limiter.BasicAuthUsers = []string{"bob", "joe", "didip"}
         ```
 
 
