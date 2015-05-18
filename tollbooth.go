@@ -23,7 +23,10 @@ func LimitByKeyParts(storage storages.ICounterStorage, limiter *config.Limiter, 
 	key := strings.Join(keyParts, "|")
 
 	storage.IncrBy(key, int64(1), limiter.TTL)
-	currentCount, _ := storage.Get(key)
+	currentCount, found := storage.Get(key)
+	if !found {
+		return &errors.HTTPError{Message: "Key: " + key + " not found.", StatusCode: 500}
+	}
 
 	// Check if the returned counter exceeds our limit
 	if currentCount > limiter.Max {

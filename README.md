@@ -30,3 +30,19 @@ func main() {
     http.ListenAndServe(":12345", nil)
 }
 ```
+
+## Features
+
+1. Rate limit by:
+
+    * Remote address and request path.
+
+    * Remote address, request path, and request methods.
+
+    * Remote address, request path, request methods, and custom headers.
+
+2. Each request handler can be rate limit individually.
+
+3. Compose your own middlware by using `LimitByKeyParts()`.
+
+4. Customizable storage by implementing `ICounterStorage` interface.
