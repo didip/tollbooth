@@ -1,12 +1,12 @@
-package storages
+package memory
 
 import (
 	"sync"
 	"time"
 )
 
-// NewInMemory is a constructor to InMemory struct.
-func NewInMemory() *InMemory {
+// New is a constructor to InMemory struct.
+func New() *InMemory {
 	inmem := &InMemory{
 		items: map[string]*InMemoryItem{},
 	}
@@ -30,7 +30,7 @@ func (inmem *InMemory) IncrBy(key string, num int64, ttl time.Duration) {
 
 	} else {
 		inmem.mutex.Lock()
-		inmem.items[key] = NewInMemoryItem(num, ttl)
+		inmem.items[key] = NewItem(num, ttl)
 		inmem.mutex.Unlock()
 	}
 }
@@ -84,8 +84,8 @@ func (inmem *InMemory) startCleanupTimer() {
 	})()
 }
 
-// NewInMemoryItem is a constructor to InMemoryItem struct.
-func NewInMemoryItem(num int64, ttl time.Duration) *InMemoryItem {
+// NewItem is a constructor to InMemoryItem struct.
+func NewItem(num int64, ttl time.Duration) *InMemoryItem {
 	item := &InMemoryItem{count: num, ttl: ttl}
 	item.touch()
 	return item

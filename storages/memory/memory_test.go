@@ -1,4 +1,4 @@
-package storages
+package memory
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 )
 
 func TestCRUD(t *testing.T) {
-	inmem := NewInMemory()
+	inmem := New()
 
 	key := "/|127.0.0.1"
 

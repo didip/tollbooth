@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/didip/tollbooth/storages"
+	"github.com/didip/tollbooth/storages/memory"
 )
 
 func TestLimitByKeyParts(t *testing.T) {
-	storage := storages.NewInMemory()
+	storage := memory.New()
 	limiter := NewLimiter(1, time.Second) // Only 1 request per second is allowed.
 
 	httperror := LimitByKeyParts(storage, limiter, []string{"127.0.0.1", "/"})
