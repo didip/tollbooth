@@ -12,7 +12,6 @@ package main
 
 import (
     "github.com/didip/tollbooth"
-    "github.com/didip/tollbooth/storages/memory"
     "net/http"
     "time"
 )
@@ -22,11 +21,8 @@ func HelloHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-    // 1. Create a request limiter storage.
-    storage := memory.New()
-
-    // 2. Create a request limiter per handler.
-    http.Handle("/", tollbooth.LimitFuncHandler(storage, tollbooth.NewLimiter(1, time.Second), HelloHandler))
+    // Create a request limiter per handler.
+    http.Handle("/", tollbooth.LimitFuncHandler(tollbooth.NewLimiter(1, time.Second), HelloHandler))
     http.ListenAndServe(":12345", nil)
 }
 ```
@@ -52,6 +48,4 @@ func main() {
 
 2. Each request handler can be rate-limited individually.
 
-3. Compose your own middlware by using `LimitByKeyParts()`.
-
-4. Customizable storage by implementing `ICounterStorage` interface.
+3. Compose your own middlware by using `LimitByKeys()`.

@@ -2,6 +2,7 @@
 package config
 
 import (
+	"github.com/tsenart/tb"
 	"time"
 )
 
@@ -10,6 +11,8 @@ func NewLimiter(max int64, ttl time.Duration) *Limiter {
 	limiter := &Limiter{Max: max, TTL: ttl}
 	limiter.Message = "You have reached maximum request limit."
 	limiter.StatusCode = 429
+
+	limiter.tokenBucket = tb.NewThrottler(ttl)
 
 	return limiter
 }
@@ -38,4 +41,13 @@ type Limiter struct {
 
 	// List of basic auth usernames to limit.
 	BasicAuthUsers []string
+
+	// Throttler struct
+	tokenBucket *tb.Throttler
+}
+
+// HasOneTokenLeft returns a bool indicating if the Bucket identified by key has
+// 1 token left. If it doesn't, the taken tokens are added back to the bucket.
+func (l *Limiter) HasOneTokenLeft(key string) bool {
+	return l.tokenBucket.Halt(key, 1, l.Max)
 }
