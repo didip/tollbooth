@@ -29,7 +29,7 @@ func main() {
 
 ## Features
 
-1. Rate-limit by remote IP, request path, request methods, custom headers, & basic auth usernames.
+1. Rate-limit by request's remote IP, path, methods, custom headers, & basic auth usernames.
     ```
     limiter := tollbooth.NewLimiter(1, time.Second)
 
