@@ -1,3 +1,4 @@
+// Package libstring provides various string related functions.
 package libstring
 
 func StringInSlice(sliceString []string, needle string) bool {
