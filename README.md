@@ -49,3 +49,6 @@ func main() {
 2. Each request handler can be rate-limited individually.
 
 3. Compose your own middlware by using `LimitByKeys()`.
+
+4. Tollbooth does not require external storage since it uses [Token Bucket](http://en.wikipedia.org/wiki/Token_bucket).
+We are using [ratelimit Go library](https://github.com/juju/ratelimit).
