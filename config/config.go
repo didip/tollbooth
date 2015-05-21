@@ -2,7 +2,7 @@
 package config
 
 import (
-	"github.com/tsenart/tb"
+	"github.com/juju/ratelimit"
 	"time"
 )
 
@@ -11,8 +11,7 @@ func NewLimiter(max int64, ttl time.Duration) *Limiter {
 	limiter := &Limiter{Max: max, TTL: ttl}
 	limiter.Message = "You have reached maximum request limit."
 	limiter.StatusCode = 429
-
-	limiter.tokenBucket = tb.NewThrottler(ttl)
+	limiter.tokenBuckets = make(map[string]*ratelimit.Bucket)
 
 	return limiter
 }
@@ -43,11 +42,21 @@ type Limiter struct {
 	BasicAuthUsers []string
 
 	// Throttler struct
-	tokenBucket *tb.Throttler
+	tokenBuckets map[string]*ratelimit.Bucket
 }
 
-// HasOneTokenLeft returns a bool indicating if the Bucket identified by key has
-// 1 token left. If it doesn't, the taken tokens are added back to the bucket.
-func (l *Limiter) HasOneTokenLeft(key string) bool {
-	return l.tokenBucket.Halt(key, 1, l.Max)
+// LimitReached returns a bool indicating if the Bucket identified by key ran out of tokens.
+func (l *Limiter) LimitReached(key string) bool {
+	println("Inside LimitReached")
+
+	if _, found := l.tokenBuckets[key]; !found {
+		l.tokenBuckets[key] = ratelimit.NewBucket(l.TTL, l.Max)
+	}
+
+	_, isSoonerThanMaxWait := l.tokenBuckets[key].TakeMaxDuration(1, l.TTL)
+	if isSoonerThanMaxWait {
+		return false
+	}
+
+	return true
 }
