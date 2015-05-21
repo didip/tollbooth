@@ -110,6 +110,9 @@ func LimitHandler(limiter *config.Limiter, next http.Handler) http.Handler {
 			if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
 				sliceKeys = append(sliceKeys, []string{remoteIP, path, username})
 			}
+		} else {
+			// Default: Limit by remoteIP and path.
+			sliceKeys = append(sliceKeys, []string{remoteIP, path})
 		}
 
 		// Loop sliceKeys and check if one of them has error.

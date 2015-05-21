@@ -3,7 +3,6 @@ package config
 
 import (
 	"github.com/juju/ratelimit"
-	"log"
 	"time"
 )
 
@@ -54,11 +53,7 @@ func (l *Limiter) LimitReached(key string) bool {
 		l.tokenBuckets[key] = ratelimit.NewBucket(l.TTL, l.Max)
 	}
 
-	waitDuration, isSoonerThanMaxWait := l.tokenBuckets[key].TakeMaxDuration(1, l.TTL)
-
-	log.Println(waitDuration.String())
-	log.Print(isSoonerThanMaxWait)
-
+	_, isSoonerThanMaxWait := l.tokenBuckets[key].TakeMaxDuration(1, l.TTL)
 	if isSoonerThanMaxWait {
 		return false
 	}
