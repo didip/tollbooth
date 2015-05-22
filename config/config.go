@@ -3,6 +3,7 @@ package config
 
 import (
 	"github.com/juju/ratelimit"
+	"sync"
 	"time"
 )
 
@@ -43,6 +44,8 @@ type Limiter struct {
 
 	// Throttler struct
 	tokenBuckets map[string]*ratelimit.Bucket
+
+	sync.RWMutex
 }
 
 // LimitReached returns a bool indicating if the Bucket identified by key ran out of tokens.
@@ -51,7 +54,10 @@ func (l *Limiter) LimitReached(key string) bool {
 		l.tokenBuckets[key] = ratelimit.NewBucket(l.TTL, l.Max)
 	}
 
+	l.Lock()
 	_, isSoonerThanMaxWait := l.tokenBuckets[key].TakeMaxDuration(1, l.TTL)
+	l.Unlock()
+
 	if isSoonerThanMaxWait {
 		return false
 	}
