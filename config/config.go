@@ -47,8 +47,6 @@ type Limiter struct {
 
 // LimitReached returns a bool indicating if the Bucket identified by key ran out of tokens.
 func (l *Limiter) LimitReached(key string) bool {
-	println("Inside LimitReached")
-
 	if _, found := l.tokenBuckets[key]; !found {
 		l.tokenBuckets[key] = ratelimit.NewBucket(l.TTL, l.Max)
 	}
