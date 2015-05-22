@@ -25,95 +25,101 @@ func LimitByKeys(limiter *config.Limiter, keys []string) *errors.HTTPError {
 	return nil
 }
 
-// LimitHandler is a middleware that performs rate-limiting given http.Handler struct.
-func LimitHandler(limiter *config.Limiter, next http.Handler) http.Handler {
-	middle := func(w http.ResponseWriter, r *http.Request) {
-		remoteIP := r.Header.Get("REMOTE_ADDR")
-		path := r.URL.Path
-		sliceKeys := make([][]string, 0)
+func buildKeys(limiter *config.Limiter, r *http.Request) [][]string {
+	remoteIP := libstring.RemoteIP(r)
+	path := r.URL.Path
+	sliceKeys := make([][]string, 0)
 
-		var httpError *errors.HTTPError
-
-		if limiter.Methods != nil && limiter.Headers != nil && limiter.BasicAuthUsers != nil {
-			// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.
-			if libstring.StringInSlice(limiter.Methods, r.Method) {
-				for headerKey, headerValues := range limiter.Headers {
-					if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
-						// If header values are empty, rate-limit all request with headerKey.
-						username, _, ok := r.BasicAuth()
-						if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
-							sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, username})
-						}
-
-					} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
-						// If header values are not empty, rate-limit all request with headerKey and headerValues.
-						for _, headerValue := range headerValues {
-							username, _, ok := r.BasicAuth()
-							if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
-								sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, headerValue, username})
-							}
-						}
-					}
-				}
-			}
-
-		} else if limiter.Methods != nil && limiter.Headers != nil {
-			// Limit by HTTP methods and HTTP headers+values.
-			if libstring.StringInSlice(limiter.Methods, r.Method) {
-				for headerKey, headerValues := range limiter.Headers {
-					if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
-						// If header values are empty, rate-limit all request with headerKey.
-						sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey})
-
-					} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
-						// If header values are not empty, rate-limit all request with headerKey and headerValues.
-						for _, headerValue := range headerValues {
-							sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, headerValue})
-						}
-					}
-				}
-			}
-
-		} else if limiter.Methods != nil && limiter.BasicAuthUsers != nil {
-			// Limit by HTTP methods and Basic Auth credentials.
-			if libstring.StringInSlice(limiter.Methods, r.Method) {
-				username, _, ok := r.BasicAuth()
-				if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
-					sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, username})
-				}
-			}
-
-		} else if limiter.Methods != nil {
-			// Limit by HTTP methods.
-			if libstring.StringInSlice(limiter.Methods, r.Method) {
-				sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method})
-			}
-
-		} else if limiter.Headers != nil {
-			// Limit by HTTP headers+values.
+	if limiter.Methods != nil && limiter.Headers != nil && limiter.BasicAuthUsers != nil {
+		// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.
+		if libstring.StringInSlice(limiter.Methods, r.Method) {
 			for headerKey, headerValues := range limiter.Headers {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 					// If header values are empty, rate-limit all request with headerKey.
-					sliceKeys = append(sliceKeys, []string{remoteIP, path, headerKey})
+					username, _, ok := r.BasicAuth()
+					if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
+						sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, username})
+					}
 
 				} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
 					// If header values are not empty, rate-limit all request with headerKey and headerValues.
 					for _, headerValue := range headerValues {
-						sliceKeys = append(sliceKeys, []string{remoteIP, path, headerKey, headerValue})
+						username, _, ok := r.BasicAuth()
+						if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
+							sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, headerValue, username})
+						}
 					}
 				}
 			}
+		}
 
-		} else if limiter.BasicAuthUsers != nil {
-			// Limit by Basic Auth credentials.
+	} else if limiter.Methods != nil && limiter.Headers != nil {
+		// Limit by HTTP methods and HTTP headers+values.
+		if libstring.StringInSlice(limiter.Methods, r.Method) {
+			for headerKey, headerValues := range limiter.Headers {
+				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
+					// If header values are empty, rate-limit all request with headerKey.
+					sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey})
+
+				} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
+					// If header values are not empty, rate-limit all request with headerKey and headerValues.
+					for _, headerValue := range headerValues {
+						sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, headerValue})
+					}
+				}
+			}
+		}
+
+	} else if limiter.Methods != nil && limiter.BasicAuthUsers != nil {
+		// Limit by HTTP methods and Basic Auth credentials.
+		if libstring.StringInSlice(limiter.Methods, r.Method) {
 			username, _, ok := r.BasicAuth()
 			if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
-				sliceKeys = append(sliceKeys, []string{remoteIP, path, username})
+				sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, username})
 			}
-		} else {
-			// Default: Limit by remoteIP and path.
-			sliceKeys = append(sliceKeys, []string{remoteIP, path})
 		}
+
+	} else if limiter.Methods != nil {
+		// Limit by HTTP methods.
+		if libstring.StringInSlice(limiter.Methods, r.Method) {
+			sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method})
+		}
+
+	} else if limiter.Headers != nil {
+		// Limit by HTTP headers+values.
+		for headerKey, headerValues := range limiter.Headers {
+			if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
+				// If header values are empty, rate-limit all request with headerKey.
+				sliceKeys = append(sliceKeys, []string{remoteIP, path, headerKey})
+
+			} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
+				// If header values are not empty, rate-limit all request with headerKey and headerValues.
+				for _, headerValue := range headerValues {
+					sliceKeys = append(sliceKeys, []string{remoteIP, path, headerKey, headerValue})
+				}
+			}
+		}
+
+	} else if limiter.BasicAuthUsers != nil {
+		// Limit by Basic Auth credentials.
+		username, _, ok := r.BasicAuth()
+		if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
+			sliceKeys = append(sliceKeys, []string{remoteIP, path, username})
+		}
+	} else {
+		// Default: Limit by remoteIP and path.
+		sliceKeys = append(sliceKeys, []string{remoteIP, path})
+	}
+
+	return sliceKeys
+}
+
+// LimitHandler is a middleware that performs rate-limiting given http.Handler struct.
+func LimitHandler(limiter *config.Limiter, next http.Handler) http.Handler {
+	middle := func(w http.ResponseWriter, r *http.Request) {
+		sliceKeys := buildKeys(limiter, r)
+
+		var httpError *errors.HTTPError
 
 		// Loop sliceKeys and check if one of them has error.
 		for _, keys := range sliceKeys {
