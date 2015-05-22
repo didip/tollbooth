@@ -1,0 +1,10 @@
+{
+	"ImportPath": "github.com/didip/tollbooth",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/juju/ratelimit",
+			"Rev": "aa5bb718d4d435629821789cb90970319f57bfe5"
+		}
+	]
+}
