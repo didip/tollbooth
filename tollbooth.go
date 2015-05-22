@@ -16,7 +16,7 @@ func NewLimiter(max int64, ttl time.Duration) *config.Limiter {
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.
-// It keeps track number of request made by REMOTE_ADDR and returns HTTPError when limit is exceeded.
+// It returns HTTPError when limit is exceeded.
 func LimitByKeys(limiter *config.Limiter, keys []string) *errors.HTTPError {
 	if limiter.LimitReached(strings.Join(keys, "|")) {
 		return &errors.HTTPError{Message: limiter.Message, StatusCode: limiter.StatusCode}
