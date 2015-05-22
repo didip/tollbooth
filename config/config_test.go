@@ -43,3 +43,21 @@ func TestLimitReached(t *testing.T) {
 		t.Error("Fourth time count should not reached the limit because the 1 second window has passed.")
 	}
 }
+
+func TestMuchHigherMaxRequests(t *testing.T) {
+	numRequests := 1000
+	limiter := NewLimiter(int64(numRequests), time.Second)
+	key := "127.0.0.1|/"
+
+	// Why +1? Because of off by 1 error.
+	for i := 0; i < numRequests+1; i++ {
+		if limiter.LimitReached(key) == true {
+			t.Errorf("N(%v) limit should not be reached.", i)
+		}
+	}
+
+	if limiter.LimitReached(key) == false {
+		t.Errorf("N(%v) limit should be reached because it exceeds %v request per second.", numRequests+2, numRequests)
+	}
+
+}
