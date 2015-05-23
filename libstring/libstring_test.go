@@ -12,6 +12,12 @@ func TestStringInSlice(t *testing.T) {
 	}
 }
 
+func TestIPAddrFromRemoteAddr(t *testing.T) {
+	if ipAddrFromRemoteAddr("127.0.0.1:8989") != "127.0.0.1" {
+		t.Errorf("ipAddrFromRemoteAddr did not chop the port number correctly.")
+	}
+}
+
 func TestRemoteIP(t *testing.T) {
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
