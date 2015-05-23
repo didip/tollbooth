@@ -33,6 +33,11 @@ func main() {
     ```
     limiter := tollbooth.NewLimiter(1, time.Second)
 
+    // Configure list of places to look for IP address.
+    // By default it's: "RemoteAddr", "X-Forwarded-For", "X-Real-IP"
+    // If your application is behind a proxy, set "X-Forwarded-For" first.
+    limiter.IPLookups = []string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}
+
     // Limit only GET and POST requests.
     limiter.Methods = []string{"GET", "POST"}
 
