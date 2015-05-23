@@ -43,7 +43,7 @@ func TestDefaultBuildKeys(t *testing.T) {
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 
-	sliceKeys := buildKeys(limiter, request)
+	sliceKeys := BuildKeys(limiter, request)
 	if len(sliceKeys) == 0 {
 		t.Error("Length of sliceKeys should never be empty.")
 	}
@@ -73,7 +73,7 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 
 	request.SetBasicAuth("bro", "tato")
 
-	for _, keys := range buildKeys(limiter, request) {
+	for _, keys := range BuildKeys(limiter, request) {
 		if len(keys) != 3 {
 			t.Error("Keys should be made of 3 parts.")
 		}
@@ -104,7 +104,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 
-	for _, keys := range buildKeys(limiter, request) {
+	for _, keys := range BuildKeys(limiter, request) {
 		if len(keys) != 4 {
 			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
 		}
@@ -136,7 +136,7 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 
-	for _, keys := range buildKeys(limiter, request) {
+	for _, keys := range BuildKeys(limiter, request) {
 		if len(keys) != 3 {
 			t.Errorf("Keys should be made of 3 parts. Keys: %v", keys)
 		}
@@ -168,7 +168,7 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 
-	for _, keys := range buildKeys(limiter, request) {
+	for _, keys := range BuildKeys(limiter, request) {
 		if len(keys) != 5 {
 			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
 		}
@@ -205,7 +205,7 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 	request.SetBasicAuth("bro", "tato")
 
-	for _, keys := range buildKeys(limiter, request) {
+	for _, keys := range BuildKeys(limiter, request) {
 		if len(keys) != 4 {
 			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
 		}
@@ -242,7 +242,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 	request.SetBasicAuth("bro", "tato")
 
-	for _, keys := range buildKeys(limiter, request) {
+	for _, keys := range BuildKeys(limiter, request) {
 		if len(keys) != 6 {
 			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
 		}

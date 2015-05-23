@@ -26,7 +26,7 @@ func BenchmarkBuildKeys(b *testing.B) {
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 	for i := 0; i < b.N; i++ {
-		sliceKeys := buildKeys(limiter, request)
+		sliceKeys := BuildKeys(limiter, request)
 		if len(sliceKeys) == 0 {
 			fmt.Print("Length of sliceKeys should never be empty.")
 		}

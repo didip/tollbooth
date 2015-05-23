@@ -25,7 +25,24 @@ func LimitByKeys(limiter *config.Limiter, keys []string) *errors.HTTPError {
 	return nil
 }
 
-func buildKeys(limiter *config.Limiter, r *http.Request) [][]string {
+// LimitByRequest builds keys based on http.Request struct,
+// loops through all the keys, and check if any one of them returns HTTPError.
+func LimitByRequest(limiter *config.Limiter, r *http.Request) *errors.HTTPError {
+	sliceKeys := BuildKeys(limiter, r)
+
+	// Loop sliceKeys and check if one of them has error.
+	for _, keys := range sliceKeys {
+		httpError := LimitByKeys(limiter, keys)
+		if httpError != nil {
+			return httpError
+		}
+	}
+
+	return nil
+}
+
+// BuildKeys generates a slice of keys to rate-limit by given config and request structs.
+func BuildKeys(limiter *config.Limiter, r *http.Request) [][]string {
 	remoteIP := libstring.RemoteIP(r)
 	path := r.URL.Path
 	sliceKeys := make([][]string, 0)
@@ -117,22 +134,16 @@ func buildKeys(limiter *config.Limiter, r *http.Request) [][]string {
 // LimitHandler is a middleware that performs rate-limiting given http.Handler struct.
 func LimitHandler(limiter *config.Limiter, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
-		sliceKeys := buildKeys(limiter, r)
-
-		var httpError *errors.HTTPError
-
-		// Loop sliceKeys and check if one of them has error.
-		for _, keys := range sliceKeys {
-			httpError = LimitByKeys(limiter, keys)
-			if httpError != nil {
-				http.Error(w, httpError.Message, httpError.StatusCode)
-				return
-			}
+		httpError := LimitByRequest(limiter, r)
+		if httpError != nil {
+			http.Error(w, httpError.Message, httpError.StatusCode)
+			return
 		}
 
 		// There's no rate-limit error, serve the next handler.
 		next.ServeHTTP(w, r)
 	}
+
 	return http.HandlerFunc(middle)
 }
 
