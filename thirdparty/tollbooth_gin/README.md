@@ -10,7 +10,7 @@ package main
 
 import (
     "github.com/didip/tollbooth"
-    "github.com/didip/tollbooth/third_party/tollbooth_gin"
+    "github.com/didip/tollbooth/thirdparty/tollbooth_gin"
     "github.com/gin-gonic/gin"
     "time"
 )
