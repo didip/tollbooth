@@ -43,9 +43,14 @@ func LimitByRequest(limiter *config.Limiter, r *http.Request) *errors.HTTPError 
 
 // BuildKeys generates a slice of keys to rate-limit by given config and request structs.
 func BuildKeys(limiter *config.Limiter, r *http.Request) [][]string {
-	remoteIP := libstring.RemoteIP(r)
+	remoteIP := libstring.RemoteIP(limiter.IPLookups, r)
 	path := r.URL.Path
 	sliceKeys := make([][]string, 0)
+
+	// Don't BuildKeys if remoteIP is blank.
+	if remoteIP == "" {
+		return sliceKeys
+	}
 
 	if limiter.Methods != nil && limiter.Headers != nil && limiter.BasicAuthUsers != nil {
 		// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.

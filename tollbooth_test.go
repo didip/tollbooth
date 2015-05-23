@@ -35,6 +35,7 @@ func TestLimitByKeys(t *testing.T) {
 
 func TestDefaultBuildKeys(t *testing.T) {
 	limiter := NewLimiter(1, time.Second)
+	limiter.IPLookups = []string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"}
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {

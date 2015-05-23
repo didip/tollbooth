@@ -13,6 +13,7 @@ func NewLimiter(max int64, ttl time.Duration) *Limiter {
 	limiter.Message = "You have reached maximum request limit."
 	limiter.StatusCode = 429
 	limiter.tokenBuckets = make(map[string]*ratelimit.Bucket)
+	limiter.IPLookups = []string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}
 
 	return limiter
 }
@@ -30,6 +31,11 @@ type Limiter struct {
 
 	// Duration of rate-limiter.
 	TTL time.Duration
+
+	// List of places to look up IP address.
+	// Default is "RemoteAddr", "X-Forwarded-For", "X-Real-IP".
+	// You can rearrange the order as you like.
+	IPLookups []string
 
 	// List of HTTP Methods to limit (GET, POST, PUT, etc.).
 	// Empty means limit all methods.
