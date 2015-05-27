@@ -56,3 +56,8 @@ func main() {
 3. Compose your own middleware by using `LimitByKeys()`.
 
 4. Tollbooth does not require external storage since it uses an algorithm called [Token Bucket](http://en.wikipedia.org/wiki/Token_bucket) [(Go library: ratelimit)](https://github.com/juju/ratelimit).
+
+
+# Other Web Frameworks
+
+Support for other web frameworks are defined under `/thirdparty` directory.
