@@ -10,6 +10,7 @@ import (
 // NewLimiter is a constructor for Limiter.
 func NewLimiter(max int64, ttl time.Duration) *Limiter {
 	limiter := &Limiter{Max: max, TTL: ttl}
+	limiter.MessageContentType = "text/plain; charset=utf-8"
 	limiter.Message = "You have reached maximum request limit."
 	limiter.StatusCode = 429
 	limiter.tokenBuckets = make(map[string]*ratelimit.Bucket)
@@ -22,6 +23,9 @@ func NewLimiter(max int64, ttl time.Duration) *Limiter {
 type Limiter struct {
 	// HTTP message when limit is reached.
 	Message string
+
+	// Content-Type for Message
+	MessageContentType string
 
 	// HTTP status code when limit is reached.
 	StatusCode int
