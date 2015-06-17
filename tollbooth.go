@@ -142,8 +142,8 @@ func LimitHandler(limiter *config.Limiter, next http.Handler) http.Handler {
 		httpError := LimitByRequest(limiter, r)
 		if httpError != nil {
 			w.Header().Add("Content-Type", limiter.MessageContentType)
-			w.Write([]byte(httpError.Message))
 			w.WriteHeader(httpError.StatusCode)
+			w.Write([]byte(httpError.Message))
 			return
 		}
 
