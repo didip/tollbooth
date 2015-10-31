@@ -12,8 +12,11 @@ func LimitHandler(limiter *config.Limiter) negroni.HandlerFunc {
 		httpError := tollbooth.LimitByRequest(limiter, r)
 		if httpError != nil {
 			w.Header().Add("Content-Type", limiter.MessageContentType)
-			w.Write([]byte(httpError.Message))
+			/* RHMOD Fix for error "http: multiple response.WriteHeader calls"
+			     Reverse the sequence of the functions calls w.WriteHeader() and w.Write()
+			*/
 			w.WriteHeader(httpError.StatusCode)
+			w.Write([]byte(httpError.Message))
 			return
 
 		} else {
