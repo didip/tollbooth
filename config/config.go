@@ -65,7 +65,7 @@ func (l *Limiter) LimitReached(key string) bool {
 		l.tokenBuckets[key] = ratelimit.NewBucket(l.TTL, l.Max)
 	}
 
-	_, isSoonerThanMaxWait := l.tokenBuckets[key].TakeMaxDuration(1, l.TTL)
+	_, isSoonerThanMaxWait := l.tokenBuckets[key].TakeMaxDuration(1, 0)
 	l.Unlock()
 
 	if isSoonerThanMaxWait {
