@@ -62,7 +62,7 @@ type Limiter struct {
 func (l *Limiter) LimitReached(key string) bool {
 	l.Lock()
 	if _, found := l.tokenBuckets[key]; !found {
-		l.tokenBuckets[key] = ratelimit.NewBucket(l.TTL, l.Max)
+		l.tokenBuckets[key] = ratelimit.NewBucketWithQuantum(l.TTL, l.Max, l.Max)
 	}
 
 	_, isSoonerThanMaxWait := l.tokenBuckets[key].TakeMaxDuration(1, 0)
