@@ -2,9 +2,10 @@
 package config
 
 import (
-	"github.com/juju/ratelimit"
 	"sync"
 	"time"
+
+	"github.com/juju/ratelimit"
 )
 
 // NewLimiter is a constructor for Limiter.
