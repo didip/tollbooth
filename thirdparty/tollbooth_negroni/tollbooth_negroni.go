@@ -1,7 +1,7 @@
 package tollbooth_negroni
 
 import (
-	"github.com/codegangsta/negroni"
+	"github.com/urfave/negroni"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/config"
 	"net/http"

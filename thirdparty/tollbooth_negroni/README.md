@@ -1,6 +1,6 @@
 ## tollbooth_negroni
 
-[Negroni](https://github.com/codegangsta/negroni) middleware for rate limiting HTTP requests.
+[Negroni](https://github.com/urfave/negroni) middleware for rate limiting HTTP requests.
 
 
 ## Five Minutes Tutorial
@@ -9,7 +9,7 @@
 package main
 
 import (
-    "github.com/codegangsta/negroni"
+    "github.com/urfave/negroni"
     "github.com/didip/tollbooth"
     "github.com/didip/tollbooth/thirdparty/tollbooth_negroni"
     "net/http"
