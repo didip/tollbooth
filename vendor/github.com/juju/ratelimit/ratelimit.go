@@ -2,11 +2,13 @@
 // Licensed under the LGPLv3 with static-linking exception.
 // See LICENCE file for details.
 
-// The ratelimit package provides an efficient token bucket implementation.
+// The ratelimit package provides an efficient token bucket implementation
+// that can be used to limit the rate of arbitrary things.
 // See http://en.wikipedia.org/wiki/Token_bucket.
 package ratelimit
 
 import (
+	"math"
 	"strconv"
 	"sync"
 	"time"
@@ -55,7 +57,7 @@ func NewBucketWithRate(rate float64, capacity int64) *Bucket {
 			continue
 		}
 		tb := NewBucketWithQuantum(fillInterval, capacity, quantum)
-		if diff := abs(tb.Rate() - rate); diff/rate <= rateMargin {
+		if diff := math.Abs(tb.Rate() - rate); diff/rate <= rateMargin {
 			return tb
 		}
 	}
@@ -169,6 +171,30 @@ func (tb *Bucket) takeAvailable(now time.Time, count int64) int64 {
 	return count
 }
 
+// Available returns the number of available tokens. It will be negative
+// when there are consumers waiting for tokens. Note that if this
+// returns greater than zero, it does not guarantee that calls that take
+// tokens from the buffer will succeed, as the number of available
+// tokens could have changed in the meantime. This method is intended
+// primarily for metrics reporting and debugging.
+func (tb *Bucket) Available() int64 {
+	return tb.available(time.Now())
+}
+
+// available is the internal version of available - it takes the current time as
+// an argument to enable easy testing.
+func (tb *Bucket) available(now time.Time) int64 {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	tb.adjust(now)
+	return tb.avail
+}
+
+// Capacity returns the capacity that the bucket was created with.
+func (tb *Bucket) Capacity() int64 {
+	return tb.capacity
+}
+
 // Rate returns the fill rate of the bucket, in tokens per second.
 func (tb *Bucket) Rate() float64 {
 	return 1e9 * float64(tb.quantum) / float64(tb.fillInterval)
@@ -216,11 +242,4 @@ func (tb *Bucket) adjust(now time.Time) (currentTick int64) {
 	}
 	tb.availTick = currentTick
 	return
-}
-
-func abs(f float64) float64 {
-	if f < 0 {
-		return -f
-	}
-	return f
 }
