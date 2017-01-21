@@ -11,23 +11,29 @@ package main
 import (
 	"time"
 
-	"github.com/didip/tollbooth/thirdparty/tollbooth_echo"
 	"github.com/didip/tollbooth"
-	"github.com/webx-top/echo"
-	"github.com/webx-top/echo/engine/standard"
+	"github.com/magicwrighter/tollbooth/thirdparty/tollbooth_fasthttp"
+	"github.com/valyala/fasthttp"
 )
 
 func main() {
-	e := echo.New()
+	requestHandler := func(ctx *fasthttp.RequestCtx) {
+		switch string(ctx.Path()) {
+		case "/hello":
+			helloHandler(ctx)
+		default:
+			ctx.Error("Unsupporterd path", fasthttp.StatusNotFound)
+		}
+	}
 
 	// Create a limiter struct.
 	limiter := tollbooth.NewLimiter(1, time.Second)
 
-	e.Get("/", echo.HandlerFunc(func(c echo.Context) error {
-		return c.String(200, "Hello, World!")
-	}), tollbooth_echo.LimitHandler(limiter))
-
-	e.Run(standard.New(":4444"))
+	fasthttp.ListenAndServe(":4444", tollbooth_fasthttp.LimitHandler(requestHandler, limiter))
 }
 
+func helloHandler(ctx *fasthttp.RequestCtx) {
+	ctx.SetStatusCode(fasthttp.StatusOK)
+	ctx.SetBody([]byte("Hello, World!"))
+}
 ```
