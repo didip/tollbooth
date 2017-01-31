@@ -1,6 +1,6 @@
 ## tollbooth_chi
 
-[Gin](https://github.com/pressly/chi) middleware for rate limiting HTTP requests.
+[Chi](https://github.com/pressly/chi) middleware for rate limiting HTTP requests.
 
 
 ## Five Minutes Tutorial
