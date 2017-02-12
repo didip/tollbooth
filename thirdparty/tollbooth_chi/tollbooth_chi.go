@@ -7,11 +7,11 @@ import (
 )
 
 func LimitHandler(limiter *config.Limiter) func(http.Handler) http.Handler {
-	wrapper := &limiterWrapper{
-		limiter: limiter,
-	}
-
 	return func(handler http.Handler) http.Handler {
+		wrapper := &limiterWrapper{
+			limiter: limiter,
+		}
+
 		wrapper.handler = handler
 		return wrapper
 	}
