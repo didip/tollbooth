@@ -17,6 +17,10 @@ func NewLimiter(max int64, ttl time.Duration) *config.Limiter {
 	return config.NewLimiter(max, ttl)
 }
 
+func NewLimiterExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval time.Duration) *config.Limiter {
+	return config.NewLimiterExpiringBuckets(max, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval)
+}
+
 // LimitByKeys keeps track number of request made by keys separated by pipe.
 // It returns HTTPError when limit is exceeded.
 func LimitByKeys(limiter *config.Limiter, keys []string) *errors.HTTPError {
