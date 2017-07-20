@@ -16,7 +16,7 @@ func main() {
 	limiter := tollbooth.NewLimiter(1, time.Second)
 
 	e.Get("/", echo.HandlerFunc(func(c echo.Context) error {
-		return c.String(200, "Hello, World!")
+		return c.String("Hello, World!", 200)
 	}), tollbooth_echo.LimitHandler(limiter))
 
 	e.Run(standard.New(":4444"))
