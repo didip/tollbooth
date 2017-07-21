@@ -16,7 +16,7 @@ func LimitMiddleware(limiter *config.Limiter) echo.MiddlewareFunc {
 		return echo.HandlerFunc(func(c echo.Context) error {
 			httpError := LimitByRequest(limiter, c.Request())
 			if httpError != nil {
-				return c.String(httpError.StatusCode, httpError.Message)
+				return c.String(httpError.Message, httpError.StatusCode)
 			}
 			return h.Handle(c)
 		})
