@@ -286,17 +286,17 @@ func TestLimitHandler(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 
+	handler.ServeHTTP(rr, req)
+	//Should not be limited
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
 	go func() {
 		handler.ServeHTTP(rr, req)
-		// Should not be limited
-		if status := rr.Code; status != http.StatusOK {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		// Should be limited
+		if status := rr.Code; status != http.StatusTooManyRequests {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusTooManyRequests)
 		}
 	}()
-
-	handler.ServeHTTP(rr, req)
-	//Should be limited
-	if status := rr.Code; status != http.StatusTooManyRequests {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusTooManyRequests)
-	}
 }
