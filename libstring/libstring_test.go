@@ -29,7 +29,7 @@ func TestRemoteIPDefault(t *testing.T) {
 
 	request.Header.Set("X-Real-IP", ipv6)
 
-	ip := RemoteIP(ipLookups, request)
+	ip := RemoteIP(ipLookups, 1, request)
 	if ip != request.RemoteAddr {
 		t.Errorf("Did not get the right IP. IP: %v", ip)
 	}
@@ -47,15 +47,19 @@ func TestRemoteIPForwardedFor(t *testing.T) {
 		t.Errorf("Unable to create new HTTP request. Error: %v", err)
 	}
 
-	request.Header.Set("X-Forwarded-For", "54.223.11.104")
+	request.Header.Set("X-Forwarded-For", "54.223.11.104,54.223.11.105,54.223.11.106,54.223.11.107,54.223.11.108")
 	request.Header.Set("X-Real-IP", ipv6)
 
-	ip := RemoteIP(ipLookups, request)
-	if ip != "54.223.11.104" {
-		t.Errorf("Did not get the right IP. IP: %v", ip)
-	}
+	ip := RemoteIP(ipLookups, 1, request)
 	if ip == ipv6 {
 		t.Errorf("X-Real-IP should have been skipped. IP: %v", ip)
+	}
+	if ip != "54.223.11.107" {
+		t.Errorf("Did not get the right IP. IP: %v", ip)
+	}
+	ip = RemoteIP(ipLookups, -1, request)
+	if ip != "54.223.11.104" {
+		t.Errorf("Did not get the right IP. IP: %v", ip)
 	}
 }
 
@@ -71,7 +75,7 @@ func TestRemoteIPRealIP(t *testing.T) {
 	request.Header.Set("X-Forwarded-For", "54.223.11.104")
 	request.Header.Set("X-Real-IP", ipv6)
 
-	ip := RemoteIP(ipLookups, request)
+	ip := RemoteIP(ipLookups, 1, request)
 	if ip != ipv6 {
 		t.Errorf("Did not get the right IP. IP: %v", ip)
 	}

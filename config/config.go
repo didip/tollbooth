@@ -16,6 +16,7 @@ func NewLimiter(max int64, ttl time.Duration) *Limiter {
 	limiter.Message = "You have reached maximum request limit."
 	limiter.StatusCode = 429
 	limiter.IPLookups = []string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}
+	limiter.XForwardedForIndex = 1
 
 	limiter.tokenBucketsNoTTL = make(map[string]*rate.Limiter)
 
@@ -62,6 +63,11 @@ type Limiter struct {
 	// Default is "RemoteAddr", "X-Forwarded-For", "X-Real-IP".
 	// You can rearrange the order as you like.
 	IPLookups []string
+
+	// The number of steps to take from the proxy in the X-Forwarded-For list.
+	// Default is 1. Using 0 will give the proxy IP (end of the list).
+	// Using -1 will give the original sender (start of the list).
+	XForwardedForIndex int
 
 	// List of HTTP Methods to limit (GET, POST, PUT, etc.).
 	// Empty means limit all methods.
