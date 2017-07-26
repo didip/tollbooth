@@ -50,15 +50,15 @@ func TestRemoteIPForwardedFor(t *testing.T) {
 	request.Header.Set("X-Forwarded-For", "54.223.11.104,54.223.11.105,54.223.11.106,54.223.11.107,54.223.11.108")
 	request.Header.Set("X-Real-IP", ipv6)
 
-	ip := RemoteIP(ipLookups, 1, request)
+	ip := RemoteIP(ipLookups, 0, request)
 	if ip == ipv6 {
 		t.Errorf("X-Real-IP should have been skipped. IP: %v", ip)
 	}
-	if ip != "54.223.11.107" {
+	if ip != "54.223.11.104" {
 		t.Errorf("Did not get the right IP. IP: %v", ip)
 	}
-	ip = RemoteIP(ipLookups, -1, request)
-	if ip != "54.223.11.104" {
+	ip = RemoteIP(ipLookups, -2, request)
+	if ip != "54.223.11.107" {
 		t.Errorf("Did not get the right IP. IP: %v", ip)
 	}
 }

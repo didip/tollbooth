@@ -16,7 +16,7 @@ func NewLimiter(max int64, ttl time.Duration) *Limiter {
 	limiter.Message = "You have reached maximum request limit."
 	limiter.StatusCode = 429
 	limiter.IPLookups = []string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}
-	limiter.XForwardedForIndex = 1
+	limiter.XForwardedForIndex = 0
 
 	limiter.tokenBucketsNoTTL = make(map[string]*rate.Limiter)
 

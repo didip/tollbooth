@@ -40,9 +40,9 @@ func RemoteIP(ipLookups []string, xForwardedForIndex int, r *http.Request) strin
 				parts[i] = strings.TrimSpace(p)
 			}
 			if xForwardedForIndex < 0 {
-				return parts[-1-xForwardedForIndex]
+				return parts[len(parts)+xForwardedForIndex]
 			} else {
-				return parts[len(parts)-1-xForwardedForIndex]
+				return parts[xForwardedForIndex]
 			}
 		}
 		if lookup == "X-Real-IP" && realIP != "" {
