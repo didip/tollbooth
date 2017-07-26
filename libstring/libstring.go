@@ -25,7 +25,7 @@ func ipAddrFromRemoteAddr(s string) string {
 }
 
 // RemoteIP finds IP Address given http.Request struct.
-func RemoteIP(ipLookups []string, r *http.Request) string {
+func RemoteIP(ipLookups []string, xForwardedForIndex int, r *http.Request) string {
 	realIP := r.Header.Get("X-Real-IP")
 	forwardedFor := r.Header.Get("X-Forwarded-For")
 
@@ -39,7 +39,11 @@ func RemoteIP(ipLookups []string, r *http.Request) string {
 			for i, p := range parts {
 				parts[i] = strings.TrimSpace(p)
 			}
-			return parts[0]
+			if xForwardedForIndex < 0 {
+				return parts[len(parts)+xForwardedForIndex]
+			} else {
+				return parts[xForwardedForIndex]
+			}
 		}
 		if lookup == "X-Real-IP" && realIP != "" {
 			return realIP

@@ -46,6 +46,11 @@ func main() {
     // If your application is behind a proxy, set "X-Forwarded-For" first.
     limiter.IPLookups = []string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}
 
+    // Configure number of steps to take in X-Forwarded-For list.
+    // By default it's 0. This checks the first IP from the list.
+    // Set to -1 to get the last or -2 to get the second-to-last.
+    limiter.XForwardedForIndex = 0
+
     // Limit only GET and POST requests.
     limiter.Methods = []string{"GET", "POST"}
 
