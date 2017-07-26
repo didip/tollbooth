@@ -16,6 +16,7 @@ func NewLimiter(max int64, ttl time.Duration) *Limiter {
 	limiter.Message = "You have reached maximum request limit."
 	limiter.StatusCode = 429
 	limiter.IPLookups = []string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}
+	limiter.RejectFunc = nil
 
 	limiter.tokenBucketsNoTTL = make(map[string]*rate.Limiter)
 
@@ -62,6 +63,9 @@ type Limiter struct {
 	// Default is "RemoteAddr", "X-Forwarded-For", "X-Real-IP".
 	// You can rearrange the order as you like.
 	IPLookups []string
+
+	// A function to call when a request is rejected.
+	RejectFunc func()
 
 	// List of HTTP Methods to limit (GET, POST, PUT, etc.).
 	// Empty means limit all methods.
