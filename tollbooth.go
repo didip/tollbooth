@@ -169,6 +169,9 @@ func LimitHandler(limiter *config.Limiter, next http.Handler) http.Handler {
 			w.Header().Add("Content-Type", limiter.MessageContentType)
 			w.WriteHeader(httpError.StatusCode)
 			w.Write([]byte(httpError.Message))
+			if limiter.RejectFunc != nil {
+				limiter.RejectFunc()
+			}
 			return
 		}
 

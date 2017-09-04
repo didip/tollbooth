@@ -46,6 +46,9 @@ func main() {
     // If your application is behind a proxy, set "X-Forwarded-For" first.
     limiter.IPLookups = []string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}
 
+    // Add a function to be called when a request is rejected.
+    limiter.RejectFunc = func() { fmt.Println("A request was rejected") }
+ 
     // Limit only GET and POST requests.
     limiter.Methods = []string{"GET", "POST"}
 
