@@ -72,8 +72,9 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 	limiterMethods := limiter.GetMethods()
 	limiterHeaders := limiter.GetHeaders()
 	limiterBasicAuthUsers := limiter.GetBasicAuthUsers()
+	limiterHeadersIsSet := limiterHeaders != nil && len(limiterHeaders) > 0
 
-	if limiterMethods != nil && limiterHeaders != nil && limiterBasicAuthUsers != nil {
+	if limiterMethods != nil && limiterHeadersIsSet && limiterBasicAuthUsers != nil {
 		// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.
 		if libstring.StringInSlice(limiterMethods, r.Method) {
 			for headerKey, headerValues := range limiterHeaders {
@@ -96,7 +97,7 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 
-	} else if limiterMethods != nil && limiterHeaders != nil {
+	} else if limiterMethods != nil && limiterHeadersIsSet {
 		// Limit by HTTP methods and HTTP headers+values.
 		if libstring.StringInSlice(limiterMethods, r.Method) {
 			for headerKey, headerValues := range limiterHeaders {
@@ -128,7 +129,7 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 			sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method})
 		}
 
-	} else if limiterHeaders != nil {
+	} else if limiterHeadersIsSet {
 		// Limit by HTTP headers+values.
 		for headerKey, headerValues := range limiterHeaders {
 			if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {

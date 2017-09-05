@@ -43,7 +43,7 @@ func TestDefaultBuildKeys(t *testing.T) {
 
 	sliceKeys := BuildKeys(lmt, request)
 	if len(sliceKeys) == 0 {
-		t.Error("Length of sliceKeys should never be empty.")
+		t.Fatal("Length of sliceKeys should never be empty.")
 	}
 
 	for _, keys := range sliceKeys {
