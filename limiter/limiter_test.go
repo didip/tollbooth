@@ -13,11 +13,11 @@ func TestConstructor(t *testing.T) {
 	if lmt.TTL != time.Second {
 		t.Errorf("TTL field is incorrect. Value: %v", lmt.TTL)
 	}
-	if lmt.Message != "You have reached maximum request limit." {
-		t.Errorf("Message field is incorrect. Value: %v", lmt.Message)
+	if lmt.GetMessage() != "You have reached maximum request limit." {
+		t.Errorf("Message field is incorrect. Value: %v", lmt.GetMessage())
 	}
-	if lmt.StatusCode != 429 {
-		t.Errorf("StatusCode field is incorrect. Value: %v", lmt.StatusCode)
+	if lmt.GetStatusCode() != 429 {
+		t.Errorf("StatusCode field is incorrect. Value: %v", lmt.GetStatusCode())
 	}
 }
 
@@ -32,11 +32,11 @@ func TestConstructorExpiringBuckets(t *testing.T) {
 	if lmt.TokenBuckets.DefaultExpirationTTL != time.Second {
 		t.Errorf("DefaultExpirationTTL field for TokenBuckets is incorrect. Value: %v", lmt.TokenBuckets.DefaultExpirationTTL)
 	}
-	if lmt.Message != "You have reached maximum request limit." {
-		t.Errorf("Message field is incorrect. Value: %v", lmt.Message)
+	if lmt.GetMessage() != "You have reached maximum request limit." {
+		t.Errorf("Message field is incorrect. Value: %v", lmt.GetMessage())
 	}
-	if lmt.StatusCode != 429 {
-		t.Errorf("StatusCode field is incorrect. Value: %v", lmt.StatusCode)
+	if lmt.GetStatusCode() != 429 {
+		t.Errorf("StatusCode field is incorrect. Value: %v", lmt.GetStatusCode())
 	}
 }
 

@@ -25,7 +25,7 @@ func NewLimiterExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucke
 // It returns HTTPError when limit is exceeded.
 func LimitByKeys(limiter *limiter.Limiter, keys []string) *errors.HTTPError {
 	if limiter.LimitReached(strings.Join(keys, "|")) {
-		return &errors.HTTPError{Message: limiter.Message, StatusCode: limiter.StatusCode}
+		return &errors.HTTPError{Message: limiter.GetMessage(), StatusCode: limiter.GetStatusCode()}
 	}
 
 	return nil
@@ -36,7 +36,7 @@ func LimitByKeys(limiter *limiter.Limiter, keys []string) *errors.HTTPError {
 // User can define a TTL for the key to expire
 func LimitByKeysWithCustomTokenBucketTTL(limiter *limiter.Limiter, keys []string, bucketExpireTTL time.Duration) *errors.HTTPError {
 	if limiter.LimitReachedWithCustomTokenBucketTTL(strings.Join(keys, "|"), bucketExpireTTL) {
-		return &errors.HTTPError{Message: limiter.Message, StatusCode: limiter.StatusCode}
+		return &errors.HTTPError{Message: limiter.GetMessage(), StatusCode: limiter.GetStatusCode()}
 	}
 
 	return nil
@@ -60,7 +60,7 @@ func LimitByRequest(limiter *limiter.Limiter, r *http.Request) *errors.HTTPError
 
 // BuildKeys generates a slice of keys to rate-limit by given limiter and request structs.
 func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
-	remoteIP := libstring.RemoteIP(limiter.IPLookups, r)
+	remoteIP := libstring.RemoteIP(limiter.GetIPLookups(), r)
 	path := r.URL.Path
 	sliceKeys := make([][]string, 0)
 
@@ -69,14 +69,16 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 		return sliceKeys
 	}
 
-	if limiter.Methods != nil && limiter.Headers != nil && limiter.BasicAuthUsers != nil {
+	if limiter.GetMethods() != nil && limiter.GetHeaders() != nil && limiter.GetBasicAuthUsers() != nil {
+		basicAuthUsers := limiter.GetBasicAuthUsers()
+
 		// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.
-		if libstring.StringInSlice(limiter.Methods, r.Method) {
-			for headerKey, headerValues := range limiter.Headers {
+		if libstring.StringInSlice(limiter.GetMethods(), r.Method) {
+			for headerKey, headerValues := range limiter.GetHeaders() {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 					// If header values are empty, rate-limit all request with headerKey.
 					username, _, ok := r.BasicAuth()
-					if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
+					if ok && libstring.StringInSlice(basicAuthUsers, username) {
 						sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, username})
 					}
 
@@ -84,7 +86,7 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 					// If header values are not empty, rate-limit all request with headerKey and headerValues.
 					for _, headerValue := range headerValues {
 						username, _, ok := r.BasicAuth()
-						if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
+						if ok && libstring.StringInSlice(basicAuthUsers, username) {
 							sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, headerValue, username})
 						}
 					}
@@ -92,10 +94,10 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 
-	} else if limiter.Methods != nil && limiter.Headers != nil {
+	} else if limiter.GetMethods() != nil && limiter.GetHeaders() != nil {
 		// Limit by HTTP methods and HTTP headers+values.
-		if libstring.StringInSlice(limiter.Methods, r.Method) {
-			for headerKey, headerValues := range limiter.Headers {
+		if libstring.StringInSlice(limiter.GetMethods(), r.Method) {
+			for headerKey, headerValues := range limiter.GetHeaders() {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 					// If header values are empty, rate-limit all request with headerKey.
 					sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey})
@@ -109,24 +111,24 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 
-	} else if limiter.Methods != nil && limiter.BasicAuthUsers != nil {
+	} else if limiter.GetMethods() != nil && limiter.GetBasicAuthUsers() != nil {
 		// Limit by HTTP methods and Basic Auth credentials.
-		if libstring.StringInSlice(limiter.Methods, r.Method) {
+		if libstring.StringInSlice(limiter.GetMethods(), r.Method) {
 			username, _, ok := r.BasicAuth()
-			if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
+			if ok && libstring.StringInSlice(limiter.GetBasicAuthUsers(), username) {
 				sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, username})
 			}
 		}
 
-	} else if limiter.Methods != nil {
+	} else if limiter.GetMethods() != nil {
 		// Limit by HTTP methods.
-		if libstring.StringInSlice(limiter.Methods, r.Method) {
+		if libstring.StringInSlice(limiter.GetMethods(), r.Method) {
 			sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method})
 		}
 
-	} else if limiter.Headers != nil {
+	} else if limiter.GetHeaders() != nil {
 		// Limit by HTTP headers+values.
-		for headerKey, headerValues := range limiter.Headers {
+		for headerKey, headerValues := range limiter.GetHeaders() {
 			if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 				// If header values are empty, rate-limit all request with headerKey.
 				sliceKeys = append(sliceKeys, []string{remoteIP, path, headerKey})
@@ -139,10 +141,10 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 
-	} else if limiter.BasicAuthUsers != nil {
+	} else if limiter.GetBasicAuthUsers() != nil {
 		// Limit by Basic Auth credentials.
 		username, _, ok := r.BasicAuth()
-		if ok && libstring.StringInSlice(limiter.BasicAuthUsers, username) {
+		if ok && libstring.StringInSlice(limiter.GetBasicAuthUsers(), username) {
 			sliceKeys = append(sliceKeys, []string{remoteIP, path, username})
 		}
 	} else {
@@ -166,13 +168,11 @@ func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 
 		httpError := LimitByRequest(lmt, r)
 		if httpError != nil {
-			w.Header().Add("Content-Type", lmt.MessageContentType)
+			w.Header().Add("Content-Type", lmt.GetMessageContentType())
 			w.WriteHeader(httpError.StatusCode)
 			w.Write([]byte(httpError.Message))
 
-			if lmt.RejectFunc != nil {
-				lmt.RejectFunc()
-			}
+			lmt.ExecRejectFunc()
 			return
 		}
 

@@ -28,16 +28,16 @@ func BenchmarkLimitByKeysWithExpiringBuckets(b *testing.B) {
 
 func BenchmarkBuildKeys(b *testing.B) {
 	limiter := limiter.New(1, time.Second)
-	limiter.IPLookups = []string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"}
-	limiter.Headers = make(map[string][]string)
-	limiter.Headers["X-Real-IP"] = []string{"2601:7:1c82:4097:59a0:a80b:2841:b8c8"}
+	limiter.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
+	limiter.SetHeaders(make(map[string][]string))
+	limiter.SetHeader("X-Real-IP", []string{"2601:7:1c82:4097:59a0:a80b:2841:b8c8"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
 		fmt.Printf("Unable to create new HTTP request. Error: %v", err)
 	}
 
-	request.Header.Set("X-Real-IP", limiter.Headers["X-Real-IP"][0])
+	request.Header.Set("X-Real-IP", limiter.GetHeader("X-Real-IP")[0])
 	for i := 0; i < b.N; i++ {
 		sliceKeys := BuildKeys(limiter, request)
 		if len(sliceKeys) == 0 {

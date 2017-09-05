@@ -32,7 +32,7 @@ func TestLimitByKeys(t *testing.T) {
 
 func TestDefaultBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, time.Second)
-	lmt.IPLookups = []string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"}
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
@@ -60,7 +60,7 @@ func TestDefaultBuildKeys(t *testing.T) {
 
 func TestBasicAuthBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, time.Second)
-	lmt.BasicAuthUsers = []string{"bro"}
+	lmt.SetBasicAuthUsers([]string{"bro"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
@@ -91,8 +91,7 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 
 func TestCustomHeadersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, time.Second)
-	lmt.Headers = make(map[string][]string)
-	lmt.Headers["X-Auth-Token"] = []string{"totally-top-secret", "another-secret"}
+	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
@@ -125,7 +124,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 
 func TestRequestMethodBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, time.Second)
-	lmt.Methods = []string{"GET"}
+	lmt.SetMethods([]string{"GET"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
@@ -154,9 +153,8 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 
 func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, time.Second)
-	lmt.Methods = []string{"GET"}
-	lmt.Headers = make(map[string][]string)
-	lmt.Headers["X-Auth-Token"] = []string{"totally-top-secret", "another-secret"}
+	lmt.SetMethods([]string{"GET"})
+	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
@@ -192,8 +190,8 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 
 func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, time.Second)
-	lmt.Methods = []string{"GET"}
-	lmt.BasicAuthUsers = []string{"bro"}
+	lmt.SetMethods([]string{"GET"})
+	lmt.SetBasicAuthUsers([]string{"bro"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
@@ -226,10 +224,9 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 
 func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, time.Second)
-	lmt.Methods = []string{"GET"}
-	lmt.Headers = make(map[string][]string)
-	lmt.Headers["X-Auth-Token"] = []string{"totally-top-secret", "another-secret"}
-	lmt.BasicAuthUsers = []string{"bro"}
+	lmt.SetMethods([]string{"GET"})
+	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
+	lmt.SetBasicAuthUsers([]string{"bro"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
@@ -270,11 +267,11 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 
 func TestLimitHandler(t *testing.T) {
 	lmt := limiter.New(1, time.Second)
-	lmt.IPLookups = []string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"}
-	lmt.Methods = []string{"POST"}
+	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
+	lmt.SetMethods([]string{"POST"})
 
 	counter := 0
-	lmt.RejectFunc = func() { counter++ }
+	lmt.SetRejectFunc(func() { counter++ })
 
 	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`hello world`))
