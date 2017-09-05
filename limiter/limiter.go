@@ -306,6 +306,11 @@ func (l *Limiter) AddHeaderEntries(header string, newEntries []string) *Limiter 
 	l.Lock()
 	defer l.Unlock()
 
+	if len(l.headers[header]) == 0 {
+		l.headers[header] = newEntries
+		return l
+	}
+
 	for _, newEntry := range newEntries {
 		alreadyExists := false
 		for _, existing := range l.headers[header] {
