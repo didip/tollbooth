@@ -73,4 +73,20 @@ func main() {
 
 # Other Web Frameworks
 
-Support for other web frameworks are defined under `/thirdparty` directory.
+Sometimes, other frameworks require a little bit of shim to use Tollbooth. These shims below are contributed by the community, so I make no promises on how well they work. The one I am familiar with are: Chi, Gin, and Negroni.
+
+* [Chi](https://github.com/didip/tollbooth_chi)
+
+* [Echo](https://github.com/didip/tollbooth_echo)
+
+* [FastHTTP](https://github.com/didip/tollbooth_fasthttp)
+
+* [Gin](https://github.com/didip/tollbooth_gin)
+
+* [GoRestful](https://github.com/didip/tollbooth_gorestful)
+
+* [HTTPRouter](https://github.com/didip/tollbooth_httprouter)
+
+* [Iris](https://github.com/didip/tollbooth_iris)
+
+* [Negroni](https://github.com/didip/tollbooth_negroni)
