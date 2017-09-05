@@ -5,7 +5,9 @@
 
 This is a generic middleware to rate-limit HTTP requests.
 
-**NOTE:** This library is considered finished, any new activities are probably centered around `thirdparty` modules.
+**NOTE 1:** This library is considered finished.
+
+**NOTE 2:** In the coming weeks, I will be removing thirdparty modules and moving them to their own dedicated repos.
 
 
 ## Five Minutes Tutorial
