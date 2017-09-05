@@ -56,14 +56,18 @@ func main() {
     limiter.SetBasicAuthUsers([]string{"bob", "jane", "didip", "vip"})
     // But you can also add them later.
     limiter.AddBasicAuthUsers([]string{"sansa"})
-    // As well removing them later.
+    // As well as removing them later.
     limiter.RemoveBasicAuthUsers([]string{"vip"})
 
-
     // Limit request headers containing certain values.
-    // Typically, you prefetched these values from the database.
-    limiter.Headers = make(map[string][]string)
-    limiter.Headers["X-Access-Token"] = []string{"abc123", "xyz098"}
+    // You can first define them on-load.
+    limiter.SetHeader("X-Access-Token", []string{"abc123", "xyz098"})
+    // You can remove it.
+    limiter.RemoveHeader("X-Access-Token")
+    // You can add new entries on a particular header.
+    limiter.AddHeaderEntries("X-Dragons", []string{"drogon", "viserion", "rhaegal"})
+    // As well as removing them later.
+    limiter.RemoveHeaderEntries("X-Dragons", []string{"viserion"})
     ```
 
 2. Each request handler can be rate-limited individually.
