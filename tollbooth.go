@@ -72,9 +72,11 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 	limiterMethods := limiter.GetMethods()
 	limiterHeaders := limiter.GetHeaders()
 	limiterBasicAuthUsers := limiter.GetBasicAuthUsers()
-	limiterHeadersIsSet := limiterHeaders != nil && len(limiterHeaders) > 0
 
-	if limiterMethods != nil && limiterHeadersIsSet && limiterBasicAuthUsers != nil {
+	limiterHeadersIsSet := limiterHeaders != nil && len(limiterHeaders) > 0
+	limiterBasicAuthUsersIsSet := limiterBasicAuthUsers != nil && len(limiterBasicAuthUsers) > 0
+
+	if limiterMethods != nil && limiterHeadersIsSet && limiterBasicAuthUsersIsSet {
 		// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.
 		if libstring.StringInSlice(limiterMethods, r.Method) {
 			for headerKey, headerValues := range limiterHeaders {
@@ -114,7 +116,7 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 
-	} else if limiterMethods != nil && limiterBasicAuthUsers != nil {
+	} else if limiterMethods != nil && limiterBasicAuthUsersIsSet {
 		// Limit by HTTP methods and Basic Auth credentials.
 		if libstring.StringInSlice(limiterMethods, r.Method) {
 			username, _, ok := r.BasicAuth()
@@ -144,7 +146,7 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 
-	} else if limiterBasicAuthUsers != nil {
+	} else if limiterBasicAuthUsersIsSet {
 		// Limit by Basic Auth credentials.
 		username, _, ok := r.BasicAuth()
 		if ok && libstring.StringInSlice(limiterBasicAuthUsers, username) {
