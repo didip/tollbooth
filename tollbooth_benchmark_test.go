@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/didip/tollbooth/config"
+	"github.com/didip/tollbooth/limiter"
 )
 
 func BenchmarkLimitByKeys(b *testing.B) {
-	limiter := config.NewLimiter(1, time.Second) // Only 1 request per second is allowed.
+	limiter := limiter.New(1, time.Second) // Only 1 request per second is allowed.
 
 	for i := 0; i < b.N; i++ {
 		LimitByKeys(limiter, []string{"127.0.0.1", "/"})
@@ -19,7 +19,7 @@ func BenchmarkLimitByKeys(b *testing.B) {
 }
 
 func BenchmarkLimitByKeysWithExpiringBuckets(b *testing.B) {
-	limiter := config.NewLimiterExpiringBuckets(1, time.Second, time.Minute, time.Minute) // Only 1 request per second is allowed.
+	limiter := limiter.NewExpiringBuckets(1, time.Second, time.Minute, time.Minute) // Only 1 request per second is allowed.
 
 	for i := 0; i < b.N; i++ {
 		LimitByKeys(limiter, []string{"127.0.0.1", "/"})
@@ -27,7 +27,7 @@ func BenchmarkLimitByKeysWithExpiringBuckets(b *testing.B) {
 }
 
 func BenchmarkBuildKeys(b *testing.B) {
-	limiter := config.NewLimiter(1, time.Second)
+	limiter := limiter.New(1, time.Second)
 	limiter.IPLookups = []string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"}
 	limiter.Headers = make(map[string][]string)
 	limiter.Headers["X-Real-IP"] = []string{"2601:7:1c82:4097:59a0:a80b:2841:b8c8"}

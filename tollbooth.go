@@ -7,23 +7,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/didip/tollbooth/config"
 	"github.com/didip/tollbooth/errors"
 	"github.com/didip/tollbooth/libstring"
+	"github.com/didip/tollbooth/limiter"
 )
 
-// NewLimiter is a convenience function to config.NewLimiter.
-func NewLimiter(max int64, ttl time.Duration) *config.Limiter {
-	return config.NewLimiter(max, ttl)
+// NewLimiter is a convenience function to limiter.New.
+func NewLimiter(max int64, ttl time.Duration) *limiter.Limiter {
+	return limiter.New(max, ttl)
 }
 
-func NewLimiterExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval time.Duration) *config.Limiter {
-	return config.NewLimiterExpiringBuckets(max, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval)
+func NewLimiterExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval time.Duration) *limiter.Limiter {
+	return limiter.NewExpiringBuckets(max, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval)
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.
 // It returns HTTPError when limit is exceeded.
-func LimitByKeys(limiter *config.Limiter, keys []string) *errors.HTTPError {
+func LimitByKeys(limiter *limiter.Limiter, keys []string) *errors.HTTPError {
 	if limiter.LimitReached(strings.Join(keys, "|")) {
 		return &errors.HTTPError{Message: limiter.Message, StatusCode: limiter.StatusCode}
 	}
@@ -34,7 +34,7 @@ func LimitByKeys(limiter *config.Limiter, keys []string) *errors.HTTPError {
 // LimitByKeysWithCustomTokenBucketTTL keeps track number of request made by keys separated by pipe.
 // It returns HTTPError when limit is exceeded.
 // User can define a TTL for the key to expire
-func LimitByKeysWithCustomTokenBucketTTL(limiter *config.Limiter, keys []string, bucketExpireTTL time.Duration) *errors.HTTPError {
+func LimitByKeysWithCustomTokenBucketTTL(limiter *limiter.Limiter, keys []string, bucketExpireTTL time.Duration) *errors.HTTPError {
 	if limiter.LimitReachedWithCustomTokenBucketTTL(strings.Join(keys, "|"), bucketExpireTTL) {
 		return &errors.HTTPError{Message: limiter.Message, StatusCode: limiter.StatusCode}
 	}
@@ -44,7 +44,7 @@ func LimitByKeysWithCustomTokenBucketTTL(limiter *config.Limiter, keys []string,
 
 // LimitByRequest builds keys based on http.Request struct,
 // loops through all the keys, and check if any one of them returns HTTPError.
-func LimitByRequest(limiter *config.Limiter, r *http.Request) *errors.HTTPError {
+func LimitByRequest(limiter *limiter.Limiter, r *http.Request) *errors.HTTPError {
 	sliceKeys := BuildKeys(limiter, r)
 
 	// Loop sliceKeys and check if one of them has error.
@@ -58,8 +58,8 @@ func LimitByRequest(limiter *config.Limiter, r *http.Request) *errors.HTTPError 
 	return nil
 }
 
-// BuildKeys generates a slice of keys to rate-limit by given config and request structs.
-func BuildKeys(limiter *config.Limiter, r *http.Request) [][]string {
+// BuildKeys generates a slice of keys to rate-limit by given limiter and request structs.
+func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 	remoteIP := libstring.RemoteIP(limiter.IPLookups, r)
 	path := r.URL.Path
 	sliceKeys := make([][]string, 0)
@@ -154,23 +154,24 @@ func BuildKeys(limiter *config.Limiter, r *http.Request) [][]string {
 }
 
 // SetResponseHeaders configures X-Rate-Limit-Limit and X-Rate-Limit-Duration
-func SetResponseHeaders(limiter *config.Limiter, w http.ResponseWriter) {
-	w.Header().Add("X-Rate-Limit-Limit", strconv.FormatInt(limiter.Max, 10))
-	w.Header().Add("X-Rate-Limit-Duration", limiter.TTL.String())
+func SetResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter) {
+	w.Header().Add("X-Rate-Limit-Limit", strconv.FormatInt(lmt.Max, 10))
+	w.Header().Add("X-Rate-Limit-Duration", lmt.TTL.String())
 }
 
 // LimitHandler is a middleware that performs rate-limiting given http.Handler struct.
-func LimitHandler(limiter *config.Limiter, next http.Handler) http.Handler {
+func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
-		SetResponseHeaders(limiter, w)
+		SetResponseHeaders(lmt, w)
 
-		httpError := LimitByRequest(limiter, r)
+		httpError := LimitByRequest(lmt, r)
 		if httpError != nil {
-			w.Header().Add("Content-Type", limiter.MessageContentType)
+			w.Header().Add("Content-Type", lmt.MessageContentType)
 			w.WriteHeader(httpError.StatusCode)
 			w.Write([]byte(httpError.Message))
-			if limiter.RejectFunc != nil {
-				limiter.RejectFunc()
+
+			if lmt.RejectFunc != nil {
+				lmt.RejectFunc()
 			}
 			return
 		}
@@ -183,6 +184,6 @@ func LimitHandler(limiter *config.Limiter, next http.Handler) http.Handler {
 }
 
 // LimitFuncHandler is a middleware that performs rate-limiting given request handler function.
-func LimitFuncHandler(limiter *config.Limiter, nextFunc func(http.ResponseWriter, *http.Request)) http.Handler {
-	return LimitHandler(limiter, http.HandlerFunc(nextFunc))
+func LimitFuncHandler(lmt *limiter.Limiter, nextFunc func(http.ResponseWriter, *http.Request)) http.Handler {
+	return LimitHandler(lmt, http.HandlerFunc(nextFunc))
 }

@@ -1,5 +1,5 @@
-// Package config provides data structure to configure rate-limiter.
-package config
+// Package limiter provides data structure to configure rate-limiter.
+package limiter
 
 import (
 	"sync"
@@ -9,8 +9,8 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// NewLimiter is a constructor for Limiter.
-func NewLimiter(max int64, ttl time.Duration) *Limiter {
+// New is a constructor for Limiter.
+func New(max int64, ttl time.Duration) *Limiter {
 	limiter := &Limiter{Max: max, TTL: ttl}
 	limiter.MessageContentType = "text/plain; charset=utf-8"
 	limiter.Message = "You have reached maximum request limit."
@@ -23,9 +23,9 @@ func NewLimiter(max int64, ttl time.Duration) *Limiter {
 	return limiter
 }
 
-// NewLimiterExpiringBuckets constructs Limiter with expirable TokenBuckets.
-func NewLimiterExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval time.Duration) *Limiter {
-	limiter := NewLimiter(max, ttl)
+// NewExpiringBuckets constructs Limiter with expirable TokenBuckets.
+func NewExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval time.Duration) *Limiter {
+	limiter := New(max, ttl)
 	limiter.TokenBuckets.DefaultExpirationTTL = bucketDefaultExpirationTTL
 	limiter.TokenBuckets.ExpireJobInterval = bucketExpireJobInterval
 
