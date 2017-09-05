@@ -15,7 +15,7 @@ func BenchmarkLimitReached(b *testing.B) {
 }
 
 func BenchmarkLimitReachedWithExpiringBuckets(b *testing.B) {
-	lmt := NewExpiringBuckets(1, time.Second, time.Minute, 30*time.Second)
+	lmt := NewWithExpiringBuckets(1, time.Second, time.Minute, 30*time.Second)
 	key := "127.0.0.1|/"
 
 	for i := 0; i < b.N; i++ {

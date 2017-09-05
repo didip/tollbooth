@@ -22,7 +22,7 @@ func TestConstructor(t *testing.T) {
 }
 
 func TestConstructorExpiringBuckets(t *testing.T) {
-	lmt := NewExpiringBuckets(1, time.Second, time.Second, 0)
+	lmt := NewWithExpiringBuckets(1, time.Second, time.Second, 0)
 	if lmt.Max != 1 {
 		t.Errorf("Max field is incorrect. Value: %v", lmt.Max)
 	}
@@ -59,7 +59,7 @@ func TestLimitReached(t *testing.T) {
 }
 
 func TestLimitReachedWithCustomTokenBucketTTL(t *testing.T) {
-	lmt := NewExpiringBuckets(1, time.Second, time.Second, 0)
+	lmt := NewWithExpiringBuckets(1, time.Second, time.Second, 0)
 	key := "127.0.0.1|/"
 
 	if lmt.LimitReached(key) == true {
@@ -95,7 +95,7 @@ func TestMuchHigherMaxRequests(t *testing.T) {
 
 func TestMuchHigherMaxRequestsWithCustomTokenBucketTTL(t *testing.T) {
 	numRequests := 1000
-	lmt := NewExpiringBuckets(int64(numRequests), time.Second, time.Minute, time.Minute)
+	lmt := NewWithExpiringBuckets(int64(numRequests), time.Second, time.Minute, time.Minute)
 	key := "127.0.0.1|/"
 
 	for i := 0; i < numRequests; i++ {

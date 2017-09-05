@@ -18,7 +18,7 @@ func NewLimiter(max int64, ttl time.Duration) *limiter.Limiter {
 }
 
 func NewLimiterExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval time.Duration) *limiter.Limiter {
-	return limiter.NewExpiringBuckets(max, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval)
+	return limiter.NewWithExpiringBuckets(max, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval)
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.

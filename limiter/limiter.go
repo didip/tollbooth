@@ -24,8 +24,8 @@ func New(max int64, ttl time.Duration) *Limiter {
 	return limiter
 }
 
-// NewExpiringBuckets constructs Limiter with expirable TokenBuckets.
-func NewExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval time.Duration) *Limiter {
+// NewWithExpiringBuckets constructs Limiter with expirable TokenBuckets.
+func NewWithExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval time.Duration) *Limiter {
 	limiter := New(max, ttl)
 	limiter.TokenBuckets.DefaultExpirationTTL = bucketDefaultExpirationTTL
 	limiter.TokenBuckets.ExpireJobInterval = bucketExpireJobInterval
@@ -98,10 +98,12 @@ type Limiter struct {
 }
 
 // SetMessage is thread-safe way of setting HTTP message when limit is reached.
-func (l *Limiter) SetMessage(msg string) {
+func (l *Limiter) SetMessage(msg string) *Limiter {
 	l.Lock()
 	l.message = msg
 	l.Unlock()
+
+	return l
 }
 
 // GetMessage is thread-safe way of getting HTTP message when limit is reached.
@@ -112,10 +114,12 @@ func (l *Limiter) GetMessage() string {
 }
 
 // SetMessageContentType is thread-safe way of setting HTTP message Content-Type when limit is reached.
-func (l *Limiter) SetMessageContentType(contentType string) {
+func (l *Limiter) SetMessageContentType(contentType string) *Limiter {
 	l.Lock()
 	l.messageContentType = contentType
 	l.Unlock()
+
+	return l
 }
 
 // GetMessageContentType is thread-safe way of getting HTTP message Content-Type when limit is reached.
@@ -126,10 +130,12 @@ func (l *Limiter) GetMessageContentType() string {
 }
 
 // SetStatusCode is thread-safe way of setting HTTP status code when limit is reached.
-func (l *Limiter) SetStatusCode(statusCode int) {
+func (l *Limiter) SetStatusCode(statusCode int) *Limiter {
 	l.Lock()
 	l.statusCode = statusCode
 	l.Unlock()
+
+	return l
 }
 
 // GetStatusCode is thread-safe way of getting HTTP status code when limit is reached.
@@ -158,10 +164,12 @@ func (l *Limiter) ExecRejectFunc() {
 }
 
 // SetIPLookups is thread-safe way of setting list of places to look up IP address.
-func (l *Limiter) SetIPLookups(ipLookups []string) {
+func (l *Limiter) SetIPLookups(ipLookups []string) *Limiter {
 	l.Lock()
 	l.ipLookups = ipLookups
 	l.Unlock()
+
+	return l
 }
 
 // GetIPLookups is thread-safe way of getting list of places to look up IP address.
@@ -172,10 +180,12 @@ func (l *Limiter) GetIPLookups() []string {
 }
 
 // SetMethods is thread-safe way of setting list of HTTP Methods to limit (GET, POST, PUT, etc.).
-func (l *Limiter) SetMethods(methods []string) {
+func (l *Limiter) SetMethods(methods []string) *Limiter {
 	l.Lock()
 	l.methods = methods
 	l.Unlock()
+
+	return l
 }
 
 // GetMethods is thread-safe way of getting list of HTTP Methods to limit (GET, POST, PUT, etc.).
@@ -186,10 +196,12 @@ func (l *Limiter) GetMethods() []string {
 }
 
 // SetBasicAuthUsers is thread-safe way of setting list of basic auth usernames to limit.
-func (l *Limiter) SetBasicAuthUsers(basicAuthUsers []string) {
+func (l *Limiter) SetBasicAuthUsers(basicAuthUsers []string) *Limiter {
 	l.Lock()
 	l.basicAuthUsers = basicAuthUsers
 	l.Unlock()
+
+	return l
 }
 
 // GetBasicAuthUsers is thread-safe way of getting list of basic auth usernames to limit.
@@ -200,7 +212,7 @@ func (l *Limiter) GetBasicAuthUsers() []string {
 }
 
 // AddBasicAuthUsers is thread-safe way of adding basic auth usernames to existing list.
-func (l *Limiter) AddBasicAuthUsers(basicAuthUsers []string) {
+func (l *Limiter) AddBasicAuthUsers(basicAuthUsers []string) *Limiter {
 	l.Lock()
 	defer l.Unlock()
 
@@ -217,10 +229,12 @@ func (l *Limiter) AddBasicAuthUsers(basicAuthUsers []string) {
 			l.basicAuthUsers = append(l.basicAuthUsers, toBeAdded)
 		}
 	}
+
+	return l
 }
 
 // RemoveBasicAuthUsers is thread-safe way of removing basic auth usernames from existing list.
-func (l *Limiter) RemoveBasicAuthUsers(basicAuthUsers []string) {
+func (l *Limiter) RemoveBasicAuthUsers(basicAuthUsers []string) *Limiter {
 	newList := make([]string, 0)
 
 	l.RLock()
@@ -242,13 +256,17 @@ func (l *Limiter) RemoveBasicAuthUsers(basicAuthUsers []string) {
 	l.Lock()
 	l.basicAuthUsers = newList
 	l.Unlock()
+
+	return l
 }
 
 // SetHeaders is thread-safe way of setting map of HTTP headers to limit.
-func (l *Limiter) SetHeaders(headers map[string][]string) {
+func (l *Limiter) SetHeaders(headers map[string][]string) *Limiter {
 	l.Lock()
 	l.headers = headers
 	l.Unlock()
+
+	return l
 }
 
 // GetHeaders is thread-safe way of getting map of HTTP headers to limit.
@@ -259,10 +277,12 @@ func (l *Limiter) GetHeaders() map[string][]string {
 }
 
 // SetHeader is thread-safe way of setting entries of 1 HTTP header.
-func (l *Limiter) SetHeader(header string, entries []string) {
+func (l *Limiter) SetHeader(header string, entries []string) *Limiter {
 	l.Lock()
 	l.headers[header] = entries
 	l.Unlock()
+
+	return l
 }
 
 // GetHeader is thread-safe way of getting entries of 1 HTTP header.
@@ -272,8 +292,17 @@ func (l *Limiter) GetHeader(header string) []string {
 	return l.headers[header]
 }
 
+// RemoveHeader is thread-safe way of removing entries of 1 HTTP header.
+func (l *Limiter) RemoveHeader(header string) *Limiter {
+	l.Lock()
+	l.headers[header] = make([]string, 0)
+	l.Unlock()
+
+	return l
+}
+
 // AddHeaderEntries is thread-safe way of adding new entries to 1 HTTP header rule.
-func (l *Limiter) AddHeaderEntries(header string, newEntries []string) {
+func (l *Limiter) AddHeaderEntries(header string, newEntries []string) *Limiter {
 	l.Lock()
 	defer l.Unlock()
 
@@ -290,10 +319,12 @@ func (l *Limiter) AddHeaderEntries(header string, newEntries []string) {
 			l.headers[header] = append(l.headers[header], newEntry)
 		}
 	}
+
+	return l
 }
 
 // RemoveHeaderEntries is thread-safe way of adding new entries to 1 HTTP header rule.
-func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string) {
+func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string) *Limiter {
 	newList := make([]string, 0)
 
 	l.RLock()
@@ -315,6 +346,8 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 	l.Lock()
 	l.headers[header] = newList
 	l.Unlock()
+
+	return l
 }
 
 func (l *Limiter) isUsingTokenBucketsWithTTL() bool {
