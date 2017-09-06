@@ -21,30 +21,30 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 		SetHeaders(make(map[string][]string))
 
 	if generalExpirableOptions != nil {
-		lmt.tokenBucketOptions = generalExpirableOptions
+		lmt.generalExpirableOptions = generalExpirableOptions
 	} else {
-		lmt.tokenBucketOptions = &ExpirableOptions{}
+		lmt.generalExpirableOptions = &ExpirableOptions{}
 	}
 
 	// Default for ExpireJobInterval is every minute.
-	if lmt.tokenBucketOptions.ExpireJobInterval <= 0 {
-		lmt.tokenBucketOptions.ExpireJobInterval = time.Minute
+	if lmt.generalExpirableOptions.ExpireJobInterval <= 0 {
+		lmt.generalExpirableOptions.ExpireJobInterval = time.Minute
 	}
 
 	// Default for DefaultExpirationTTL is 10 years.
-	if lmt.tokenBucketOptions.DefaultExpirationTTL <= 0 {
-		lmt.tokenBucketOptions.DefaultExpirationTTL = 87600 * time.Hour
+	if lmt.generalExpirableOptions.DefaultExpirationTTL <= 0 {
+		lmt.generalExpirableOptions.DefaultExpirationTTL = 87600 * time.Hour
 	}
 
 	lmt.tokenBuckets = gocache.New(
-		lmt.tokenBucketOptions.DefaultExpirationTTL,
-		lmt.tokenBucketOptions.ExpireJobInterval,
+		lmt.generalExpirableOptions.DefaultExpirationTTL,
+		lmt.generalExpirableOptions.ExpireJobInterval,
 	)
 
 	// TODO: for now use generalExpirableOptions for basicAuth expirable map.
 	lmt.basicAuthUsers = gocache.New(
-		lmt.tokenBucketOptions.DefaultExpirationTTL,
-		lmt.tokenBucketOptions.ExpireJobInterval,
+		lmt.generalExpirableOptions.DefaultExpirationTTL,
+		lmt.generalExpirableOptions.ExpireJobInterval,
 	)
 
 	return lmt
@@ -87,7 +87,7 @@ type Limiter struct {
 	headers map[string][]string
 
 	// Able to configure token bucket expirations.
-	tokenBucketOptions *ExpirableOptions
+	generalExpirableOptions *ExpirableOptions
 
 	// Map of limiters with TTL
 	tokenBuckets *gocache.Cache
@@ -233,7 +233,7 @@ func (l *Limiter) SetBasicAuthUsers(basicAuthUsers []string) *Limiter {
 		l.basicAuthUsers.Set(
 			basicAuthUser,
 			true,
-			l.tokenBucketOptions.DefaultExpirationTTL,
+			l.generalExpirableOptions.DefaultExpirationTTL,
 		)
 	}
 
@@ -354,13 +354,6 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 	l.Unlock()
 
 	return l
-}
-
-func (l *Limiter) isUsingTokenBucketsWithTTL() bool {
-	if l.tokenBucketOptions == nil {
-		return false
-	}
-	return l.tokenBucketOptions.DefaultExpirationTTL > 0
 }
 
 func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
