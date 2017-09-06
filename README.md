@@ -37,7 +37,10 @@ func main() {
 
 1. Rate-limit by request's remote IP, path, methods, custom headers, & basic auth usernames.
     ```go
-    import "github.com/didip/tollbooth/limiter"
+    import (
+        "time"
+        "github.com/didip/tollbooth/limiter"
+    )
 
     lmt := tollbooth.NewLimiter(1, time.Second, nil)
 
@@ -84,11 +87,26 @@ func main() {
 
 3. Compose your own middleware by using `LimitByKeys()`.
 
-4. Customize your own message or function when limit is reached.
+4. Header entries and basic auth users can expire over time (to conserve memory).
 
     ```go
-    import "github.com/didip/tollbooth/limiter"
+    import "time"
 
+    lmt := tollbooth.NewLimiter(1, time.Second, nil)
+
+    // Set a custom expiration TTL for token bucket.
+    lmt.SetTokenBucketExpirationTTL(time.Hour)
+
+    // Set a custom expiration TTL for basic auth users.
+    lmt.SetBasicAuthExpirationTTL(time.Hour)
+
+    // Set a custom expiration TTL for header entries.
+    lmt.SetHeaderEntryExpirationTTL(time.Hour)
+    ```
+
+5. Customize your own message or function when limit is reached.
+
+    ```go
     lmt := tollbooth.NewLimiter(1, time.Second, nil)
 
     // Set a custom message.
@@ -101,7 +119,7 @@ func main() {
     lmt.SetRejectFunc(func() { fmt.Println("A request was rejected") })
     ```
 
-5. Tollbooth does not require external storage since it uses an algorithm called [Token Bucket](http://en.wikipedia.org/wiki/Token_bucket) [(Go library: golang.org/x/time/rate)](//godoc.org/golang.org/x/time/rate).
+6. Tollbooth does not require external storage since it uses an algorithm called [Token Bucket](http://en.wikipedia.org/wiki/Token_bucket) [(Go library: golang.org/x/time/rate)](//godoc.org/golang.org/x/time/rate).
 
 
 # Other Web Frameworks
