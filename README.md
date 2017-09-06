@@ -69,7 +69,7 @@ func main() {
     // You can remove it.
     lmt.RemoveHeader("X-Access-Token")
     // You can add new entries on a particular header.
-    lmt.AddHeaderEntries("X-Dragons", []string{"drogon", "viserion", "rhaegal"})
+    lmt.SetHeader("X-Dragons", []string{"drogon", "viserion", "rhaegal"})
     // As well as removing them later.
     lmt.RemoveHeaderEntries("X-Dragons", []string{"viserion"})
 

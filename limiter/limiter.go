@@ -84,7 +84,7 @@ type Limiter struct {
 
 	// Map of HTTP headers to limit.
 	// Empty means skip headers checking.
-	headers map[string][]string
+	headers map[string]*gocache.Cache
 
 	// Able to configure token bucket expirations.
 	generalExpirableOptions *ExpirableOptions
@@ -263,24 +263,60 @@ func (l *Limiter) RemoveBasicAuthUsers(basicAuthUsers []string) *Limiter {
 
 // SetHeaders is thread-safe way of setting map of HTTP headers to limit.
 func (l *Limiter) SetHeaders(headers map[string][]string) *Limiter {
-	l.Lock()
-	l.headers = headers
-	l.Unlock()
+	if l.headers == nil {
+		l.headers = make(map[string]*gocache.Cache)
+	}
+
+	for header, entries := range headers {
+		l.SetHeader(header, entries)
+	}
 
 	return l
 }
 
 // GetHeaders is thread-safe way of getting map of HTTP headers to limit.
 func (l *Limiter) GetHeaders() map[string][]string {
+	results := make(map[string][]string)
+
 	l.RLock()
 	defer l.RUnlock()
-	return l.headers
+
+	for header, entriesAsGoCache := range l.headers {
+		entries := make([]string, 0)
+
+		for entry, _ := range entriesAsGoCache.Items() {
+			entries = append(entries, entry)
+		}
+
+		results[header] = entries
+	}
+
+	return results
 }
 
 // SetHeader is thread-safe way of setting entries of 1 HTTP header.
 func (l *Limiter) SetHeader(header string, entries []string) *Limiter {
+	l.RLock()
+	existing, found := l.headers[header]
+	l.RUnlock()
+
+	if !found {
+		existing = gocache.New(
+			l.generalExpirableOptions.DefaultExpirationTTL,
+			l.generalExpirableOptions.ExpireJobInterval,
+		)
+	}
+
+	for _, entry := range entries {
+		existing.Set(
+			entry,
+			true,
+			l.generalExpirableOptions.DefaultExpirationTTL,
+		)
+	}
+
 	l.Lock()
-	l.headers[header] = entries
+	l.headers[header] = existing
 	l.Unlock()
 
 	return l
@@ -289,69 +325,44 @@ func (l *Limiter) SetHeader(header string, entries []string) *Limiter {
 // GetHeader is thread-safe way of getting entries of 1 HTTP header.
 func (l *Limiter) GetHeader(header string) []string {
 	l.RLock()
-	defer l.RUnlock()
-	return l.headers[header]
+	entriesAsGoCache := l.headers[header]
+	l.RUnlock()
+
+	entriesAsMap := entriesAsGoCache.Items()
+	entries := make([]string, 0)
+
+	for entry, _ := range entriesAsMap {
+		entries = append(entries, entry)
+	}
+
+	return entries
 }
 
 // RemoveHeader is thread-safe way of removing entries of 1 HTTP header.
 func (l *Limiter) RemoveHeader(header string) *Limiter {
 	l.Lock()
-	l.headers[header] = make([]string, 0)
+	l.headers[header] = gocache.New(
+		l.generalExpirableOptions.DefaultExpirationTTL,
+		l.generalExpirableOptions.ExpireJobInterval,
+	)
 	l.Unlock()
-
-	return l
-}
-
-// AddHeaderEntries is thread-safe way of adding new entries to 1 HTTP header rule.
-func (l *Limiter) AddHeaderEntries(header string, newEntries []string) *Limiter {
-	l.Lock()
-	defer l.Unlock()
-
-	if len(l.headers[header]) == 0 {
-		l.headers[header] = newEntries
-		return l
-	}
-
-	for _, newEntry := range newEntries {
-		alreadyExists := false
-		for _, existing := range l.headers[header] {
-			if existing == newEntry {
-				alreadyExists = true
-				break
-			}
-		}
-
-		if !alreadyExists {
-			l.headers[header] = append(l.headers[header], newEntry)
-		}
-	}
 
 	return l
 }
 
 // RemoveHeaderEntries is thread-safe way of adding new entries to 1 HTTP header rule.
 func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string) *Limiter {
-	newList := make([]string, 0)
-
 	l.RLock()
-	for _, existing := range l.headers[header] {
-		found := false
-		for _, toBeRemoves := range entriesForRemoval {
-			if existing == toBeRemoves {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			newList = append(newList, existing)
-		}
-	}
+	entries, found := l.headers[header]
 	l.RUnlock()
 
-	l.Lock()
-	l.headers[header] = newList
-	l.Unlock()
+	if !found {
+		return l
+	}
+
+	for _, toBeRemoved := range entriesForRemoval {
+		entries.Delete(toBeRemoved)
+	}
 
 	return l
 }
