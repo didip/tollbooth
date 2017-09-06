@@ -2,6 +2,7 @@
 package limiter
 
 import (
+	"net/http"
 	"sync"
 	"time"
 
@@ -16,7 +17,7 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 	lmt.SetMessageContentType("text/plain; charset=utf-8").
 		SetMessage("You have reached maximum request limit.").
 		SetStatusCode(429).
-		SetRejectFunc(nil).
+		SetOnLimitReached(nil).
 		SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
 		SetHeaders(make(map[string][]string))
 
@@ -67,7 +68,7 @@ type Limiter struct {
 	statusCode int
 
 	// A function to call when a request is rejected.
-	rejectFunc func()
+	onLimitReached func(w http.ResponseWriter, r *http.Request)
 
 	// List of places to look up IP address.
 	// Default is "RemoteAddr", "X-Forwarded-For", "X-Real-IP".
@@ -226,23 +227,23 @@ func (l *Limiter) GetStatusCode() int {
 	return l.statusCode
 }
 
-// SetRejectFunc is thread-safe way of setting after-rejection function when limit is reached.
-func (l *Limiter) SetRejectFunc(fn func()) *Limiter {
+// SetOnLimitReached is thread-safe way of setting after-rejection function when limit is reached.
+func (l *Limiter) SetOnLimitReached(fn func(w http.ResponseWriter, r *http.Request)) *Limiter {
 	l.Lock()
-	l.rejectFunc = fn
+	l.onLimitReached = fn
 	l.Unlock()
 
 	return l
 }
 
-// ExecRejectFunc is thread-safe way of executing after-rejection function when limit is reached.
-func (l *Limiter) ExecRejectFunc() {
+// ExecOnLimitReached is thread-safe way of executing after-rejection function when limit is reached.
+func (l *Limiter) ExecOnLimitReached(w http.ResponseWriter, r *http.Request) {
 	l.RLock()
 	defer l.RUnlock()
 
-	fn := l.rejectFunc
+	fn := l.onLimitReached
 	if fn != nil {
-		fn()
+		fn(w, r)
 	}
 }
 

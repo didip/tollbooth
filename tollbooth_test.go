@@ -271,7 +271,7 @@ func TestLimitHandler(t *testing.T) {
 	lmt.SetMethods([]string{"POST"})
 
 	counter := 0
-	lmt.SetRejectFunc(func() { counter++ })
+	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) { counter++ })
 
 	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`hello world`))
@@ -299,9 +299,9 @@ func TestLimitHandler(t *testing.T) {
 		if status := rr.Code; status != http.StatusTooManyRequests {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusTooManyRequests)
 		}
-		// RejectFunc should be called
+		// OnLimitReached should be called
 		if counter != 1 {
-			t.Errorf("rejectFunc was not called")
+			t.Errorf("onLimitReached was not called")
 		}
 		close(ch)
 	}()

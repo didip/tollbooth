@@ -121,7 +121,7 @@ func main() {
     lmt.SetMessageContentType("text/plain; charset=utf-8")
 
     // Set a custom function for rejection.
-    lmt.SetRejectFunc(func() { fmt.Println("A request was rejected") })
+    lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) { fmt.Println("A request was rejected") })
     ```
 
 6. Tollbooth does not require external storage since it uses an algorithm called [Token Bucket](http://en.wikipedia.org/wiki/Token_bucket) [(Go library: golang.org/x/time/rate)](//godoc.org/golang.org/x/time/rate).
