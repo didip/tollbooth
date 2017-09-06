@@ -280,12 +280,13 @@ func (l *Limiter) GetMethods() []string {
 
 // SetBasicAuthUsers is thread-safe way of setting list of basic auth usernames to limit.
 func (l *Limiter) SetBasicAuthUsers(basicAuthUsers []string) *Limiter {
+	ttl := l.GetBasicAuthExpirationTTL()
+	if ttl <= 0 {
+		ttl = l.generalExpirableOptions.DefaultExpirationTTL
+	}
+
 	for _, basicAuthUser := range basicAuthUsers {
-		l.basicAuthUsers.Set(
-			basicAuthUser,
-			true,
-			l.generalExpirableOptions.DefaultExpirationTTL,
-		)
+		l.basicAuthUsers.Set(basicAuthUser, true, ttl)
 	}
 
 	return l
