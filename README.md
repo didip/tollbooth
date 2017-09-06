@@ -69,7 +69,7 @@ func main() {
     lmt.SetHeader("X-Access-Token", []string{"abc123", "xyz098"})
     // You can remove all entries at once.
     lmt.RemoveHeader("X-Access-Token")
-    // Ore remove specific ones.
+    // Or remove specific ones.
     lmt.RemoveHeaderEntries("X-Access-Token", []string{"limitless-token"})
 
     // By the way, the setters are chainable. Example:
