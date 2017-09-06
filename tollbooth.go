@@ -27,11 +27,12 @@ func LimitByKeys(limiter *limiter.Limiter, keys []string) *errors.HTTPError {
 	return nil
 }
 
-// LimitByKeysWithCustomTokenBucketTTL keeps track number of request made by keys separated by pipe.
+// LimitByKeysWithTokenBucketTTL functions just like LimitByKeys.
+// But user can define a TTL for the token bucket to expire.
+// This is to ensure that the middleware won't leak memory.
 // It returns HTTPError when limit is exceeded.
-// User can define a TTL for the key to expire
-func LimitByKeysWithCustomTokenBucketTTL(limiter *limiter.Limiter, keys []string, bucketExpireTTL time.Duration) *errors.HTTPError {
-	if limiter.LimitReachedWithCustomTokenBucketTTL(strings.Join(keys, "|"), bucketExpireTTL) {
+func LimitByKeysWithTokenBucketTTL(limiter *limiter.Limiter, keys []string, bucketExpireTTL time.Duration) *errors.HTTPError {
+	if limiter.LimitReachedWithTokenBucketTTL(strings.Join(keys, "|"), bucketExpireTTL) {
 		return &errors.HTTPError{Message: limiter.GetMessage(), StatusCode: limiter.GetStatusCode()}
 	}
 

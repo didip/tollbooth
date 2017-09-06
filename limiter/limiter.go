@@ -19,21 +19,26 @@ func New(max int64, ttl time.Duration, tbOptions *TokenBucketOptions) *Limiter {
 	limiter.SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"})
 	limiter.SetHeaders(make(map[string][]string))
 
-	limiter.tokenBucketsNoTTL = make(map[string]*rate.Limiter)
-
 	if tbOptions != nil {
 		limiter.tokenBucketOptions = tbOptions
-
-		// Default for ExpireJobInterval is every minute.
-		if limiter.tokenBucketOptions.ExpireJobInterval <= 0 {
-			limiter.tokenBucketOptions.ExpireJobInterval = time.Minute
-		}
-
-		limiter.tokenBucketsWithTTL = gocache.New(
-			limiter.tokenBucketOptions.DefaultExpirationTTL,
-			limiter.tokenBucketOptions.ExpireJobInterval,
-		)
+	} else {
+		limiter.tokenBucketOptions = &TokenBucketOptions{}
 	}
+
+	// Default for ExpireJobInterval is every minute.
+	if limiter.tokenBucketOptions.ExpireJobInterval <= 0 {
+		limiter.tokenBucketOptions.ExpireJobInterval = time.Minute
+	}
+
+	// Default for DefaultExpirationTTL is 10 years.
+	if limiter.tokenBucketOptions.DefaultExpirationTTL <= 0 {
+		limiter.tokenBucketOptions.DefaultExpirationTTL = 87600 * time.Hour
+	}
+
+	limiter.tokenBucketsWithTTL = gocache.New(
+		limiter.tokenBucketOptions.DefaultExpirationTTL,
+		limiter.tokenBucketOptions.ExpireJobInterval,
+	)
 
 	return limiter
 }
@@ -76,9 +81,6 @@ type Limiter struct {
 
 	// Able to configure token bucket expirations.
 	tokenBucketOptions *TokenBucketOptions
-
-	// Map of limiters without TTL
-	tokenBucketsNoTTL map[string]*rate.Limiter
 
 	// Map of limiters with TTL
 	tokenBucketsWithTTL *gocache.Cache
@@ -351,22 +353,7 @@ func (l *Limiter) isUsingTokenBucketsWithTTL() bool {
 	return l.tokenBucketOptions.DefaultExpirationTTL > 0
 }
 
-func (l *Limiter) limitReachedNoTokenBucketTTL(key string) bool {
-	l.Lock()
-	defer l.Unlock()
-
-	if _, found := l.tokenBucketsNoTTL[key]; !found {
-		l.tokenBucketsNoTTL[key] = rate.NewLimiter(rate.Every(l.TTL), int(l.Max))
-	}
-
-	return !l.tokenBucketsNoTTL[key].AllowN(time.Now(), 1)
-}
-
-func (l *Limiter) limitReachedWithDefaultTokenBucketTTL(key string) bool {
-	return l.limitReachedWithCustomTokenBucketTTL(key, gocache.DefaultExpiration)
-}
-
-func (l *Limiter) limitReachedWithCustomTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
+func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
 	l.Lock()
 	defer l.Unlock()
 
@@ -388,25 +375,11 @@ func (l *Limiter) limitReachedWithCustomTokenBucketTTL(key string, tokenBucketTT
 
 // LimitReached returns a bool indicating if the Bucket identified by key ran out of tokens.
 func (l *Limiter) LimitReached(key string) bool {
-	if l.isUsingTokenBucketsWithTTL() {
-		return l.limitReachedWithDefaultTokenBucketTTL(key)
-
-	} else {
-		return l.limitReachedNoTokenBucketTTL(key)
-	}
-
-	return false
+	return l.limitReachedWithTokenBucketTTL(key, gocache.DefaultExpiration)
 }
 
 // LimitReachedWithCustomTokenBucketTTL returns a bool indicating if the Bucket identified by key ran out of tokens.
 // This public API allows user to define custom expiration TTL on the key.
-func (l *Limiter) LimitReachedWithCustomTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
-	if l.isUsingTokenBucketsWithTTL() {
-		return l.limitReachedWithCustomTokenBucketTTL(key, tokenBucketTTL)
-
-	} else {
-		return l.limitReachedNoTokenBucketTTL(key)
-	}
-
-	return false
+func (l *Limiter) LimitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
+	return l.limitReachedWithTokenBucketTTL(key, tokenBucketTTL)
 }
