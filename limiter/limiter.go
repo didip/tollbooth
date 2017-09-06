@@ -11,45 +11,48 @@ import (
 
 // New is a constructor for Limiter.
 func New(max int64, ttl time.Duration, tbOptions *TokenBucketOptions) *Limiter {
-	limiter := &Limiter{Max: max, TTL: ttl}
-	limiter.SetMessageContentType("text/plain; charset=utf-8")
-	limiter.SetMessage("You have reached maximum request limit.")
-	limiter.SetStatusCode(429)
-	limiter.SetRejectFunc(nil)
-	limiter.SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"})
-	limiter.SetHeaders(make(map[string][]string))
+	lmt := &Limiter{}
+
+	lmt.SetMax(max)
+	lmt.SetTTL(ttl)
+	lmt.SetMessageContentType("text/plain; charset=utf-8")
+	lmt.SetMessage("You have reached maximum request limit.")
+	lmt.SetStatusCode(429)
+	lmt.SetRejectFunc(nil)
+	lmt.SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"})
+	lmt.SetHeaders(make(map[string][]string))
 
 	if tbOptions != nil {
-		limiter.tokenBucketOptions = tbOptions
+		lmt.tokenBucketOptions = tbOptions
 	} else {
-		limiter.tokenBucketOptions = &TokenBucketOptions{}
+		lmt.tokenBucketOptions = &TokenBucketOptions{}
 	}
 
 	// Default for ExpireJobInterval is every minute.
-	if limiter.tokenBucketOptions.ExpireJobInterval <= 0 {
-		limiter.tokenBucketOptions.ExpireJobInterval = time.Minute
+	if lmt.tokenBucketOptions.ExpireJobInterval <= 0 {
+		lmt.tokenBucketOptions.ExpireJobInterval = time.Minute
 	}
 
 	// Default for DefaultExpirationTTL is 10 years.
-	if limiter.tokenBucketOptions.DefaultExpirationTTL <= 0 {
-		limiter.tokenBucketOptions.DefaultExpirationTTL = 87600 * time.Hour
+	if lmt.tokenBucketOptions.DefaultExpirationTTL <= 0 {
+		lmt.tokenBucketOptions.DefaultExpirationTTL = 87600 * time.Hour
 	}
 
-	limiter.tokenBuckets = gocache.New(
-		limiter.tokenBucketOptions.DefaultExpirationTTL,
-		limiter.tokenBucketOptions.ExpireJobInterval,
+	lmt.tokenBuckets = gocache.New(
+		lmt.tokenBucketOptions.DefaultExpirationTTL,
+		lmt.tokenBucketOptions.ExpireJobInterval,
 	)
 
-	return limiter
+	return lmt
 }
 
 // Limiter is a config struct to limit a particular request handler.
 type Limiter struct {
 	// Maximum number of requests to limit per duration.
-	Max int64
+	max int64
 
 	// Duration of rate-limiter.
-	TTL time.Duration
+	ttl time.Duration
 
 	// HTTP message when limit is reached.
 	message string
@@ -86,6 +89,38 @@ type Limiter struct {
 	tokenBuckets *gocache.Cache
 
 	sync.RWMutex
+}
+
+// SetMax is thread-safe way of setting maximum number of requests to limit per duration.
+func (l *Limiter) SetMax(max int64) *Limiter {
+	l.Lock()
+	l.max = max
+	l.Unlock()
+
+	return l
+}
+
+// GetMax is thread-safe way of getting maximum number of requests to limit per duration.
+func (l *Limiter) GetMax() int64 {
+	l.RLock()
+	defer l.RUnlock()
+	return l.max
+}
+
+// SetTTL is thread-safe way of setting maximum number of requests to limit per duration.
+func (l *Limiter) SetTTL(ttl time.Duration) *Limiter {
+	l.Lock()
+	l.ttl = ttl
+	l.Unlock()
+
+	return l
+}
+
+// GetTTL is thread-safe way of getting maximum number of requests to limit per duration.
+func (l *Limiter) GetTTL() time.Duration {
+	l.RLock()
+	defer l.RUnlock()
+	return l.ttl
 }
 
 // SetMessage is thread-safe way of setting HTTP message when limit is reached.
@@ -354,13 +389,16 @@ func (l *Limiter) isUsingTokenBucketsWithTTL() bool {
 }
 
 func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
+	lmtMax := l.GetMax()
+	lmtTTL := l.GetTTL()
+
 	l.Lock()
 	defer l.Unlock()
 
 	if _, found := l.tokenBuckets.Get(key); !found {
 		l.tokenBuckets.Set(
 			key,
-			rate.NewLimiter(rate.Every(l.TTL), int(l.Max)),
+			rate.NewLimiter(rate.Every(lmtTTL), int(lmtMax)),
 			tokenBucketTTL,
 		)
 	}

@@ -7,11 +7,11 @@ import (
 
 func TestConstructor(t *testing.T) {
 	lmt := New(1, time.Second, nil)
-	if lmt.Max != 1 {
-		t.Errorf("Max field is incorrect. Value: %v", lmt.Max)
+	if lmt.GetMax() != 1 {
+		t.Errorf("Max field is incorrect. Value: %v", lmt.GetMax())
 	}
-	if lmt.TTL != time.Second {
-		t.Errorf("TTL field is incorrect. Value: %v", lmt.TTL)
+	if lmt.GetTTL() != time.Second {
+		t.Errorf("TTL field is incorrect. Value: %v", lmt.GetTTL())
 	}
 	if lmt.GetMessage() != "You have reached maximum request limit." {
 		t.Errorf("Message field is incorrect. Value: %v", lmt.GetMessage())
@@ -23,11 +23,11 @@ func TestConstructor(t *testing.T) {
 
 func TestConstructorExpiringBuckets(t *testing.T) {
 	lmt := New(1, time.Second, &TokenBucketOptions{DefaultExpirationTTL: time.Second, ExpireJobInterval: 0})
-	if lmt.Max != 1 {
-		t.Errorf("Max field is incorrect. Value: %v", lmt.Max)
+	if lmt.GetMax() != 1 {
+		t.Errorf("Max field is incorrect. Value: %v", lmt.GetMax())
 	}
-	if lmt.TTL != time.Second {
-		t.Errorf("TTL field is incorrect. Value: %v", lmt.TTL)
+	if lmt.GetTTL() != time.Second {
+		t.Errorf("TTL field is incorrect. Value: %v", lmt.GetTTL())
 	}
 	if lmt.GetMessage() != "You have reached maximum request limit." {
 		t.Errorf("Message field is incorrect. Value: %v", lmt.GetMessage())

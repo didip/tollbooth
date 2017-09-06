@@ -159,8 +159,8 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 
 // SetResponseHeaders configures X-Rate-Limit-Limit and X-Rate-Limit-Duration
 func SetResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter) {
-	w.Header().Add("X-Rate-Limit-Limit", strconv.FormatInt(lmt.Max, 10))
-	w.Header().Add("X-Rate-Limit-Duration", lmt.TTL.String())
+	w.Header().Add("X-Rate-Limit-Limit", strconv.FormatInt(lmt.GetMax(), 10))
+	w.Header().Add("X-Rate-Limit-Duration", lmt.GetTTL().String())
 }
 
 // LimitHandler is a middleware that performs rate-limiting given http.Handler struct.
