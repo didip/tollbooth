@@ -41,7 +41,6 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 		lmt.generalExpirableOptions.ExpireJobInterval,
 	)
 
-	// TODO: for now use generalExpirableOptions for basicAuth expirable map.
 	lmt.basicAuthUsers = gocache.New(
 		lmt.generalExpirableOptions.DefaultExpirationTTL,
 		lmt.generalExpirableOptions.ExpireJobInterval,
@@ -79,15 +78,15 @@ type Limiter struct {
 	// Empty means limit all methods.
 	methods []string
 
+	// Able to configure token bucket expirations.
+	generalExpirableOptions *ExpirableOptions
+
 	// List of basic auth usernames to limit.
 	basicAuthUsers *gocache.Cache
 
 	// Map of HTTP headers to limit.
 	// Empty means skip headers checking.
 	headers map[string]*gocache.Cache
-
-	// Able to configure token bucket expirations.
-	generalExpirableOptions *ExpirableOptions
 
 	// Map of limiters with TTL
 	tokenBuckets *gocache.Cache
@@ -392,7 +391,7 @@ func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time
 
 // LimitReached returns a bool indicating if the Bucket identified by key ran out of tokens.
 func (l *Limiter) LimitReached(key string) bool {
-	return l.limitReachedWithTokenBucketTTL(key, gocache.DefaultExpiration)
+	return l.limitReachedWithTokenBucketTTL(key, l.generalExpirableOptions.DefaultExpirationTTL)
 }
 
 // LimitReachedWithCustomTokenBucketTTL returns a bool indicating if the Bucket identified by key ran out of tokens.
