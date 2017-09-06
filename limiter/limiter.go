@@ -91,7 +91,59 @@ type Limiter struct {
 	// Map of limiters with TTL
 	tokenBuckets *gocache.Cache
 
+	tokenBucketExpirationTTL time.Duration
+	basicAuthExpirationTTL   time.Duration
+	headerEntryExpirationTTL time.Duration
+
 	sync.RWMutex
+}
+
+// SetTokenBucketExpirationTTL is thread-safe way of setting custom token bucket expiration TTL.
+func (l *Limiter) SetTokenBucketExpirationTTL(ttl time.Duration) *Limiter {
+	l.Lock()
+	l.tokenBucketExpirationTTL = ttl
+	l.Unlock()
+
+	return l
+}
+
+// GettokenBucketExpirationTTL is thread-safe way of getting custom token bucket expiration TTL.
+func (l *Limiter) GetTokenBucketExpirationTTL() time.Duration {
+	l.RLock()
+	defer l.RUnlock()
+	return l.tokenBucketExpirationTTL
+}
+
+// SetBasicAuthExpirationTTL is thread-safe way of setting custom basic auth expiration TTL.
+func (l *Limiter) SetBasicAuthExpirationTTL(ttl time.Duration) *Limiter {
+	l.Lock()
+	l.basicAuthExpirationTTL = ttl
+	l.Unlock()
+
+	return l
+}
+
+// GetBasicAuthExpirationTTL is thread-safe way of getting custom basic auth expiration TTL.
+func (l *Limiter) GetBasicAuthExpirationTTL() time.Duration {
+	l.RLock()
+	defer l.RUnlock()
+	return l.basicAuthExpirationTTL
+}
+
+// SetHeaderEntryExpirationTTL is thread-safe way of setting custom basic auth expiration TTL.
+func (l *Limiter) SetHeaderEntryExpirationTTL(ttl time.Duration) *Limiter {
+	l.Lock()
+	l.headerEntryExpirationTTL = ttl
+	l.Unlock()
+
+	return l
+}
+
+// GetHeaderEntryExpirationTTL is thread-safe way of getting custom basic auth expiration TTL.
+func (l *Limiter) GetHeaderEntryExpirationTTL() time.Duration {
+	l.RLock()
+	defer l.RUnlock()
+	return l.headerEntryExpirationTTL
 }
 
 // SetMax is thread-safe way of setting maximum number of requests to limit per duration.
@@ -391,11 +443,11 @@ func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time
 
 // LimitReached returns a bool indicating if the Bucket identified by key ran out of tokens.
 func (l *Limiter) LimitReached(key string) bool {
-	return l.limitReachedWithTokenBucketTTL(key, l.generalExpirableOptions.DefaultExpirationTTL)
-}
+	ttl := l.GetTokenBucketExpirationTTL()
 
-// LimitReachedWithCustomTokenBucketTTL returns a bool indicating if the Bucket identified by key ran out of tokens.
-// This public API allows user to define custom expiration TTL on the key.
-func (l *Limiter) LimitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
-	return l.limitReachedWithTokenBucketTTL(key, tokenBucketTTL)
+	if ttl <= 0 {
+		ttl = l.generalExpirableOptions.DefaultExpirationTTL
+	}
+
+	return l.limitReachedWithTokenBucketTTL(key, ttl)
 }
