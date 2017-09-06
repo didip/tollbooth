@@ -10,7 +10,7 @@ import (
 )
 
 // New is a constructor for Limiter.
-func New(max int64, ttl time.Duration) *Limiter {
+func New(max int64, ttl time.Duration, tbOptions *TokenBucketOptions) *Limiter {
 	limiter := &Limiter{Max: max, TTL: ttl}
 	limiter.SetMessageContentType("text/plain; charset=utf-8")
 	limiter.SetMessage("You have reached maximum request limit.")
@@ -21,24 +21,19 @@ func New(max int64, ttl time.Duration) *Limiter {
 
 	limiter.tokenBucketsNoTTL = make(map[string]*rate.Limiter)
 
-	return limiter
-}
+	if tbOptions != nil {
+		limiter.tokenBucketOptions = tbOptions
 
-// NewWithExpiringBuckets constructs Limiter with expirable TokenBuckets.
-func NewWithExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval time.Duration) *Limiter {
-	limiter := New(max, ttl)
-	limiter.TokenBuckets.DefaultExpirationTTL = bucketDefaultExpirationTTL
-	limiter.TokenBuckets.ExpireJobInterval = bucketExpireJobInterval
+		// Default for ExpireJobInterval is every minute.
+		if limiter.tokenBucketOptions.ExpireJobInterval <= 0 {
+			limiter.tokenBucketOptions.ExpireJobInterval = time.Minute
+		}
 
-	// Default for ExpireJobInterval is every minute.
-	if limiter.TokenBuckets.ExpireJobInterval <= 0 {
-		limiter.TokenBuckets.ExpireJobInterval = time.Minute
+		limiter.tokenBucketsWithTTL = gocache.New(
+			limiter.tokenBucketOptions.DefaultExpirationTTL,
+			limiter.tokenBucketOptions.ExpireJobInterval,
+		)
 	}
-
-	limiter.tokenBucketsWithTTL = gocache.New(
-		limiter.TokenBuckets.DefaultExpirationTTL,
-		limiter.TokenBuckets.ExpireJobInterval,
-	)
 
 	return limiter
 }
@@ -80,13 +75,7 @@ type Limiter struct {
 	TTL time.Duration
 
 	// Able to configure token bucket expirations.
-	TokenBuckets struct {
-		// Default TTL to expire bucket per key basis.
-		DefaultExpirationTTL time.Duration
-
-		// How frequently tollbooth will trigger the expire job
-		ExpireJobInterval time.Duration
-	}
+	tokenBucketOptions *TokenBucketOptions
 
 	// Map of limiters without TTL
 	tokenBucketsNoTTL map[string]*rate.Limiter
@@ -356,7 +345,10 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 }
 
 func (l *Limiter) isUsingTokenBucketsWithTTL() bool {
-	return l.TokenBuckets.DefaultExpirationTTL > 0
+	if l.tokenBucketOptions == nil {
+		return false
+	}
+	return l.tokenBucketOptions.DefaultExpirationTTL > 0
 }
 
 func (l *Limiter) limitReachedNoTokenBucketTTL(key string) bool {

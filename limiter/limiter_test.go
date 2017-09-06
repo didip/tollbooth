@@ -6,7 +6,7 @@ import (
 )
 
 func TestConstructor(t *testing.T) {
-	lmt := New(1, time.Second)
+	lmt := New(1, time.Second, nil)
 	if lmt.Max != 1 {
 		t.Errorf("Max field is incorrect. Value: %v", lmt.Max)
 	}
@@ -22,15 +22,12 @@ func TestConstructor(t *testing.T) {
 }
 
 func TestConstructorExpiringBuckets(t *testing.T) {
-	lmt := NewWithExpiringBuckets(1, time.Second, time.Second, 0)
+	lmt := New(1, time.Second, &TokenBucketOptions{DefaultExpirationTTL: time.Second, ExpireJobInterval: 0})
 	if lmt.Max != 1 {
 		t.Errorf("Max field is incorrect. Value: %v", lmt.Max)
 	}
 	if lmt.TTL != time.Second {
 		t.Errorf("TTL field is incorrect. Value: %v", lmt.TTL)
-	}
-	if lmt.TokenBuckets.DefaultExpirationTTL != time.Second {
-		t.Errorf("DefaultExpirationTTL field for TokenBuckets is incorrect. Value: %v", lmt.TokenBuckets.DefaultExpirationTTL)
 	}
 	if lmt.GetMessage() != "You have reached maximum request limit." {
 		t.Errorf("Message field is incorrect. Value: %v", lmt.GetMessage())
@@ -41,7 +38,7 @@ func TestConstructorExpiringBuckets(t *testing.T) {
 }
 
 func TestLimitReached(t *testing.T) {
-	lmt := New(1, time.Second)
+	lmt := New(1, time.Second, nil)
 	key := "127.0.0.1|/"
 
 	if lmt.LimitReached(key) == true {
@@ -59,7 +56,7 @@ func TestLimitReached(t *testing.T) {
 }
 
 func TestLimitReachedWithCustomTokenBucketTTL(t *testing.T) {
-	lmt := NewWithExpiringBuckets(1, time.Second, time.Second, 0)
+	lmt := New(1, time.Second, &TokenBucketOptions{DefaultExpirationTTL: time.Second, ExpireJobInterval: 0})
 	key := "127.0.0.1|/"
 
 	if lmt.LimitReached(key) == true {
@@ -78,7 +75,7 @@ func TestLimitReachedWithCustomTokenBucketTTL(t *testing.T) {
 
 func TestMuchHigherMaxRequests(t *testing.T) {
 	numRequests := 1000
-	lmt := New(int64(numRequests), time.Second)
+	lmt := New(int64(numRequests), time.Second, nil)
 	key := "127.0.0.1|/"
 
 	for i := 0; i < numRequests; i++ {
@@ -95,7 +92,7 @@ func TestMuchHigherMaxRequests(t *testing.T) {
 
 func TestMuchHigherMaxRequestsWithCustomTokenBucketTTL(t *testing.T) {
 	numRequests := 1000
-	lmt := NewWithExpiringBuckets(int64(numRequests), time.Second, time.Minute, time.Minute)
+	lmt := New(int64(numRequests), time.Second, &TokenBucketOptions{DefaultExpirationTTL: time.Minute, ExpireJobInterval: time.Minute})
 	key := "127.0.0.1|/"
 
 	for i := 0; i < numRequests; i++ {

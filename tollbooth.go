@@ -13,12 +13,8 @@ import (
 )
 
 // NewLimiter is a convenience function to limiter.New.
-func NewLimiter(max int64, ttl time.Duration) *limiter.Limiter {
-	return limiter.New(max, ttl)
-}
-
-func NewLimiterExpiringBuckets(max int64, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval time.Duration) *limiter.Limiter {
-	return limiter.NewWithExpiringBuckets(max, ttl, bucketDefaultExpirationTTL, bucketExpireJobInterval)
+func NewLimiter(max int64, ttl time.Duration, tbOptions *limiter.TokenBucketOptions) *limiter.Limiter {
+	return limiter.New(max, ttl, tbOptions)
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.
