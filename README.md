@@ -9,6 +9,8 @@ This is a generic middleware to rate-limit HTTP requests.
 
 **NOTE 2:** In the coming weeks, I will be removing thirdparty modules and moving them to their own dedicated repos.
 
+**NOTE 3:** Major version changes are backward-incompatible. `v2.0.0` streamlines the ugliness of the old API. Totally not backward-compatible.
+
 
 ## Five Minutes Tutorial
 ```go
@@ -26,7 +28,7 @@ func HelloHandler(w http.ResponseWriter, req *http.Request) {
 
 func main() {
     // Create a request limiter per handler.
-    http.Handle("/", tollbooth.LimitFuncHandler(tollbooth.NewLimiter(1, time.Second), HelloHandler))
+    http.Handle("/", tollbooth.LimitFuncHandler(tollbooth.NewLimiter(1, time.Second, nil), HelloHandler))
     http.ListenAndServe(":12345", nil)
 }
 ```
@@ -70,6 +72,12 @@ func main() {
     lmt.AddHeaderEntries("X-Dragons", []string{"drogon", "viserion", "rhaegal"})
     // As well as removing them later.
     lmt.RemoveHeaderEntries("X-Dragons", []string{"viserion"})
+
+    // By the way, the setters are chainable. Example:
+    lmt.SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
+        SetMethods([]string{"GET", "POST"}).
+        AddBasicAuthUsers([]string{"sansa"}).
+        AddBasicAuthUsers([]string{"tyrion"})
     ```
 
 2. Each request handler can be rate-limited individually.
