@@ -352,19 +352,17 @@ func (l *Limiter) SetHeader(header string, entries []string) *Limiter {
 	existing, found := l.headers[header]
 	l.RUnlock()
 
+	ttl := l.GetHeaderEntryExpirationTTL()
+	if ttl <= 0 {
+		ttl = l.generalExpirableOptions.DefaultExpirationTTL
+	}
+
 	if !found {
-		existing = gocache.New(
-			l.generalExpirableOptions.DefaultExpirationTTL,
-			l.generalExpirableOptions.ExpireJobInterval,
-		)
+		existing = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
 	}
 
 	for _, entry := range entries {
-		existing.Set(
-			entry,
-			true,
-			l.generalExpirableOptions.DefaultExpirationTTL,
-		)
+		existing.Set(entry, true, ttl)
 	}
 
 	l.Lock()
@@ -392,11 +390,13 @@ func (l *Limiter) GetHeader(header string) []string {
 
 // RemoveHeader is thread-safe way of removing entries of 1 HTTP header.
 func (l *Limiter) RemoveHeader(header string) *Limiter {
+	ttl := l.GetHeaderEntryExpirationTTL()
+	if ttl <= 0 {
+		ttl = l.generalExpirableOptions.DefaultExpirationTTL
+	}
+
 	l.Lock()
-	l.headers[header] = gocache.New(
-		l.generalExpirableOptions.DefaultExpirationTTL,
-		l.generalExpirableOptions.ExpireJobInterval,
-	)
+	l.headers[header] = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
 	l.Unlock()
 
 	return l
