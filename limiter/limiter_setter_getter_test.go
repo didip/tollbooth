@@ -83,7 +83,7 @@ func TestSetGetBasicAuthUsers(t *testing.T) {
 	}
 
 	// Add new users
-	lmt.AddBasicAuthUsers([]string{"sansa", "arya"})
+	lmt.SetBasicAuthUsers([]string{"sansa", "arya"})
 	users := lmt.GetBasicAuthUsers()
 
 	if len(users) != 3 || users[0] != "jon" || users[1] != "sansa" || users[2] != "arya" {
@@ -94,12 +94,12 @@ func TestSetGetBasicAuthUsers(t *testing.T) {
 	lmt.RemoveBasicAuthUsers([]string{"sansa"})
 	users = lmt.GetBasicAuthUsers()
 
-	if len(users) != 2 || users[0] != "jon" || users[1] != "arya" {
+	if len(users) != 2 {
 		t.Errorf("BasicAuthUsers field is incorrect. Value: %v", users)
 	}
 
 	// Adding another arya should be ignored
-	lmt.AddBasicAuthUsers([]string{"arya"})
+	lmt.SetBasicAuthUsers([]string{"arya"})
 	users = lmt.GetBasicAuthUsers()
 
 	if len(users) != 2 || users[0] != "jon" || users[1] != "arya" {

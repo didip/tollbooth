@@ -59,7 +59,7 @@ func main() {
     // You can first define them on-load.
     lmt.SetBasicAuthUsers([]string{"bob", "jane", "didip", "vip"})
     // But you can also add them later.
-    lmt.AddBasicAuthUsers([]string{"sansa"})
+    lmt.SetBasicAuthUsers([]string{"sansa"})
     // As well as removing them later.
     lmt.RemoveBasicAuthUsers([]string{"vip"})
 
@@ -76,8 +76,8 @@ func main() {
     // By the way, the setters are chainable. Example:
     lmt.SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
         SetMethods([]string{"GET", "POST"}).
-        AddBasicAuthUsers([]string{"sansa"}).
-        AddBasicAuthUsers([]string{"tyrion"})
+        SetBasicAuthUsers([]string{"sansa"}).
+        SetBasicAuthUsers([]string{"tyrion"})
     ```
 
 2. Each request handler can be rate-limited individually.

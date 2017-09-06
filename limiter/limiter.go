@@ -10,7 +10,7 @@ import (
 )
 
 // New is a constructor for Limiter.
-func New(tbOptions *ExpirableOptions) *Limiter {
+func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 	lmt := &Limiter{}
 
 	lmt.SetMessageContentType("text/plain; charset=utf-8").
@@ -20,8 +20,8 @@ func New(tbOptions *ExpirableOptions) *Limiter {
 		SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
 		SetHeaders(make(map[string][]string))
 
-	if tbOptions != nil {
-		lmt.tokenBucketOptions = tbOptions
+	if generalExpirableOptions != nil {
+		lmt.tokenBucketOptions = generalExpirableOptions
 	} else {
 		lmt.tokenBucketOptions = &ExpirableOptions{}
 	}
@@ -37,6 +37,12 @@ func New(tbOptions *ExpirableOptions) *Limiter {
 	}
 
 	lmt.tokenBuckets = gocache.New(
+		lmt.tokenBucketOptions.DefaultExpirationTTL,
+		lmt.tokenBucketOptions.ExpireJobInterval,
+	)
+
+	// TODO: for now use generalExpirableOptions for basicAuth expirable map.
+	lmt.basicAuthUsers = gocache.New(
 		lmt.tokenBucketOptions.DefaultExpirationTTL,
 		lmt.tokenBucketOptions.ExpireJobInterval,
 	)
@@ -74,7 +80,7 @@ type Limiter struct {
 	methods []string
 
 	// List of basic auth usernames to limit.
-	basicAuthUsers []string
+	basicAuthUsers *gocache.Cache
 
 	// Map of HTTP headers to limit.
 	// Empty means skip headers checking.
@@ -223,65 +229,34 @@ func (l *Limiter) GetMethods() []string {
 
 // SetBasicAuthUsers is thread-safe way of setting list of basic auth usernames to limit.
 func (l *Limiter) SetBasicAuthUsers(basicAuthUsers []string) *Limiter {
-	l.Lock()
-	l.basicAuthUsers = basicAuthUsers
-	l.Unlock()
+	for _, basicAuthUser := range basicAuthUsers {
+		l.basicAuthUsers.Set(
+			basicAuthUser,
+			true,
+			l.tokenBucketOptions.DefaultExpirationTTL,
+		)
+	}
 
 	return l
 }
 
 // GetBasicAuthUsers is thread-safe way of getting list of basic auth usernames to limit.
 func (l *Limiter) GetBasicAuthUsers() []string {
-	l.RLock()
-	defer l.RUnlock()
-	return l.basicAuthUsers
-}
+	asMap := l.basicAuthUsers.Items()
 
-// AddBasicAuthUsers is thread-safe way of adding basic auth usernames to existing list.
-func (l *Limiter) AddBasicAuthUsers(basicAuthUsers []string) *Limiter {
-	l.Lock()
-	defer l.Unlock()
-
-	for _, toBeAdded := range basicAuthUsers {
-		alreadyExists := false
-		for _, existing := range l.basicAuthUsers {
-			if existing == toBeAdded {
-				alreadyExists = true
-				break
-			}
-		}
-
-		if !alreadyExists {
-			l.basicAuthUsers = append(l.basicAuthUsers, toBeAdded)
-		}
+	var basicAuthUsers []string
+	for basicAuthUser, _ := range asMap {
+		basicAuthUsers = append(basicAuthUsers, basicAuthUser)
 	}
 
-	return l
+	return basicAuthUsers
 }
 
 // RemoveBasicAuthUsers is thread-safe way of removing basic auth usernames from existing list.
 func (l *Limiter) RemoveBasicAuthUsers(basicAuthUsers []string) *Limiter {
-	newList := make([]string, 0)
-
-	l.RLock()
-	for _, existing := range l.basicAuthUsers {
-		found := false
-		for _, toBeRemoved := range basicAuthUsers {
-			if existing == toBeRemoved {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			newList = append(newList, existing)
-		}
+	for _, toBeRemoved := range basicAuthUsers {
+		l.basicAuthUsers.Delete(toBeRemoved)
 	}
-	l.RUnlock()
-
-	l.Lock()
-	l.basicAuthUsers = newList
-	l.Unlock()
 
 	return l
 }
