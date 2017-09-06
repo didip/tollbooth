@@ -266,7 +266,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 }
 
 func TestLimitHandler(t *testing.T) {
-	lmt := limiter.New(1, time.Second, nil)
+	lmt := limiter.New(nil).SetMax(1).SetTTL(time.Second)
 	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
 	lmt.SetMethods([]string{"POST"})
 

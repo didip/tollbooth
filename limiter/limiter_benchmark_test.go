@@ -6,7 +6,7 @@ import (
 )
 
 func BenchmarkLimitReached(b *testing.B) {
-	lmt := New(1, time.Second, nil)
+	lmt := New(nil).SetMax(1).SetTTL(time.Second)
 	key := "127.0.0.1|/"
 
 	for i := 0; i < b.N; i++ {
@@ -15,7 +15,7 @@ func BenchmarkLimitReached(b *testing.B) {
 }
 
 func BenchmarkLimitReachedWithExpiringBuckets(b *testing.B) {
-	lmt := New(1, time.Second, &TokenBucketOptions{DefaultExpirationTTL: time.Minute, ExpireJobInterval: 30 * time.Second})
+	lmt := New(&TokenBucketOptions{DefaultExpirationTTL: time.Minute, ExpireJobInterval: 30 * time.Second}).SetMax(1).SetTTL(time.Second)
 	key := "127.0.0.1|/"
 
 	for i := 0; i < b.N; i++ {

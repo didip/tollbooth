@@ -14,7 +14,7 @@ import (
 
 // NewLimiter is a convenience function to limiter.New.
 func NewLimiter(max int64, ttl time.Duration, tbOptions *limiter.TokenBucketOptions) *limiter.Limiter {
-	return limiter.New(max, ttl, tbOptions)
+	return limiter.New(tbOptions).SetMax(max).SetTTL(ttl)
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.

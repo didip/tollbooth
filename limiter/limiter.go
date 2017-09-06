@@ -10,17 +10,15 @@ import (
 )
 
 // New is a constructor for Limiter.
-func New(max int64, ttl time.Duration, tbOptions *TokenBucketOptions) *Limiter {
+func New(tbOptions *TokenBucketOptions) *Limiter {
 	lmt := &Limiter{}
 
-	lmt.SetMax(max)
-	lmt.SetTTL(ttl)
-	lmt.SetMessageContentType("text/plain; charset=utf-8")
-	lmt.SetMessage("You have reached maximum request limit.")
-	lmt.SetStatusCode(429)
-	lmt.SetRejectFunc(nil)
-	lmt.SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"})
-	lmt.SetHeaders(make(map[string][]string))
+	lmt.SetMessageContentType("text/plain; charset=utf-8").
+		SetMessage("You have reached maximum request limit.").
+		SetStatusCode(429).
+		SetRejectFunc(nil).
+		SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
+		SetHeaders(make(map[string][]string))
 
 	if tbOptions != nil {
 		lmt.tokenBucketOptions = tbOptions
@@ -172,10 +170,12 @@ func (l *Limiter) GetStatusCode() int {
 }
 
 // SetRejectFunc is thread-safe way of setting after-rejection function when limit is reached.
-func (l *Limiter) SetRejectFunc(fn func()) {
+func (l *Limiter) SetRejectFunc(fn func()) *Limiter {
 	l.Lock()
 	l.rejectFunc = fn
 	l.Unlock()
+
+	return l
 }
 
 // ExecRejectFunc is thread-safe way of executing after-rejection function when limit is reached.
