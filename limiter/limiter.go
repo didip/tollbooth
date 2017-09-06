@@ -10,7 +10,7 @@ import (
 )
 
 // New is a constructor for Limiter.
-func New(tbOptions *TokenBucketOptions) *Limiter {
+func New(tbOptions *ExpirableOptions) *Limiter {
 	lmt := &Limiter{}
 
 	lmt.SetMessageContentType("text/plain; charset=utf-8").
@@ -23,7 +23,7 @@ func New(tbOptions *TokenBucketOptions) *Limiter {
 	if tbOptions != nil {
 		lmt.tokenBucketOptions = tbOptions
 	} else {
-		lmt.tokenBucketOptions = &TokenBucketOptions{}
+		lmt.tokenBucketOptions = &ExpirableOptions{}
 	}
 
 	// Default for ExpireJobInterval is every minute.
@@ -81,7 +81,7 @@ type Limiter struct {
 	headers map[string][]string
 
 	// Able to configure token bucket expirations.
-	tokenBucketOptions *TokenBucketOptions
+	tokenBucketOptions *ExpirableOptions
 
 	// Map of limiters with TTL
 	tokenBuckets *gocache.Cache

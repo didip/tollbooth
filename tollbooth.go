@@ -13,7 +13,7 @@ import (
 )
 
 // NewLimiter is a convenience function to limiter.New.
-func NewLimiter(max int64, ttl time.Duration, tbOptions *limiter.TokenBucketOptions) *limiter.Limiter {
+func NewLimiter(max int64, ttl time.Duration, tbOptions *limiter.ExpirableOptions) *limiter.Limiter {
 	return limiter.New(tbOptions).SetMax(max).SetTTL(ttl)
 }
 

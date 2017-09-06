@@ -45,7 +45,7 @@ func main() {
     // This setting means:
     // create a 1 request/second limiter and
     // every token bucket in it will expire 1 hour after it was initially set.
-    lmt = tollbooth.NewLimiter(1, time.Second, &limiter.TokenBucketOptions{DefaultExpirationTTL: time.Hour})
+    lmt = tollbooth.NewLimiter(1, time.Second, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
 
     // Configure list of places to look for IP address.
     // By default it's: "RemoteAddr", "X-Forwarded-For", "X-Real-IP"
