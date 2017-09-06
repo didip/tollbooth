@@ -35,7 +35,7 @@ func New(max int64, ttl time.Duration, tbOptions *TokenBucketOptions) *Limiter {
 		limiter.tokenBucketOptions.DefaultExpirationTTL = 87600 * time.Hour
 	}
 
-	limiter.tokenBucketsWithTTL = gocache.New(
+	limiter.tokenBuckets = gocache.New(
 		limiter.tokenBucketOptions.DefaultExpirationTTL,
 		limiter.tokenBucketOptions.ExpireJobInterval,
 	)
@@ -45,6 +45,12 @@ func New(max int64, ttl time.Duration, tbOptions *TokenBucketOptions) *Limiter {
 
 // Limiter is a config struct to limit a particular request handler.
 type Limiter struct {
+	// Maximum number of requests to limit per duration.
+	Max int64
+
+	// Duration of rate-limiter.
+	TTL time.Duration
+
 	// HTTP message when limit is reached.
 	message string
 
@@ -73,17 +79,11 @@ type Limiter struct {
 	// Empty means skip headers checking.
 	headers map[string][]string
 
-	// Maximum number of requests to limit per duration.
-	Max int64
-
-	// Duration of rate-limiter.
-	TTL time.Duration
-
 	// Able to configure token bucket expirations.
 	tokenBucketOptions *TokenBucketOptions
 
 	// Map of limiters with TTL
-	tokenBucketsWithTTL *gocache.Cache
+	tokenBuckets *gocache.Cache
 
 	sync.RWMutex
 }
@@ -357,15 +357,15 @@ func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time
 	l.Lock()
 	defer l.Unlock()
 
-	if _, found := l.tokenBucketsWithTTL.Get(key); !found {
-		l.tokenBucketsWithTTL.Set(
+	if _, found := l.tokenBuckets.Get(key); !found {
+		l.tokenBuckets.Set(
 			key,
 			rate.NewLimiter(rate.Every(l.TTL), int(l.Max)),
 			tokenBucketTTL,
 		)
 	}
 
-	expiringMap, found := l.tokenBucketsWithTTL.Get(key)
+	expiringMap, found := l.tokenBuckets.Get(key)
 	if !found {
 		return false
 	}
