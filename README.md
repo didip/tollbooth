@@ -9,7 +9,7 @@ This is a generic middleware to rate-limit HTTP requests.
 
 **NOTE 2:** In the coming weeks, I will be removing thirdparty modules and moving them to their own dedicated repos.
 
-**NOTE 3:** Major version changes are backward-incompatible. `v2.0.0` streamlines the ugliness of the old API. Totally not backward-compatible.
+**NOTE 3:** Major version changes are backward-incompatible. `v2.0.0` streamlines the ugliness of the old API.
 
 
 ## Five Minutes Tutorial
@@ -59,22 +59,18 @@ func main() {
     lmt.SetMethods([]string{"GET", "POST"})
 
     // Limit based on basic auth usernames.
-    // You can first define them on-load.
+    // You add them on-load, or later as you handle requests.
     lmt.SetBasicAuthUsers([]string{"bob", "jane", "didip", "vip"})
-    // But you can also add them later.
-    lmt.SetBasicAuthUsers([]string{"sansa"})
-    // As well as removing them later.
+    // You can remove them later as well.
     lmt.RemoveBasicAuthUsers([]string{"vip"})
 
     // Limit request headers containing certain values.
-    // You can first define them on-load.
+    // You add them on-load, or later as you handle requests.
     lmt.SetHeader("X-Access-Token", []string{"abc123", "xyz098"})
-    // You can remove it.
+    // You can remove all entries at once.
     lmt.RemoveHeader("X-Access-Token")
-    // You can add new entries on a particular header.
-    lmt.SetHeader("X-Dragons", []string{"drogon", "viserion", "rhaegal"})
-    // As well as removing them later.
-    lmt.RemoveHeaderEntries("X-Dragons", []string{"viserion"})
+    // Ore remove specific ones.
+    lmt.RemoveHeaderEntries("X-Access-Token", []string{"limitless-token"})
 
     // By the way, the setters are chainable. Example:
     lmt.SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
@@ -83,11 +79,9 @@ func main() {
         SetBasicAuthUsers([]string{"tyrion"})
     ```
 
-2. Each request handler can be rate-limited individually.
+2. Compose your own middleware by using `LimitByKeys()`.
 
-3. Compose your own middleware by using `LimitByKeys()`.
-
-4. Header entries and basic auth users can expire over time (to conserve memory).
+3. Header entries and basic auth users can expire over time (to conserve memory).
 
     ```go
     import "time"
@@ -103,6 +97,17 @@ func main() {
     // Set a custom expiration TTL for header entries.
     lmt.SetHeaderEntryExpirationTTL(time.Hour)
     ```
+
+4. Upon rejection, the following HTTP response headers are available to users:
+
+    * `X-Rate-Limit-Limit` The maximum request limit.
+
+    * `X-Rate-Limit-Duration` The rate-limiter duration.
+
+    * `X-Rate-Limit-Request-Forwarded-For` The rejected request `X-Forwarded-For`.
+
+    * `X-Rate-Limit-Request-Remote-Addr` The rejected request `RemoteAddr`.
+
 
 5. Customize your own message or function when limit is reached.
 

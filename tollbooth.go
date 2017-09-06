@@ -145,16 +145,18 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 	return sliceKeys
 }
 
-// SetResponseHeaders configures X-Rate-Limit-Limit and X-Rate-Limit-Duration
-func SetResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter) {
+// setResponseHeaders configures X-Rate-Limit-Limit and X-Rate-Limit-Duration
+func setResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("X-Rate-Limit-Limit", strconv.FormatInt(lmt.GetMax(), 10))
 	w.Header().Add("X-Rate-Limit-Duration", lmt.GetTTL().String())
+	w.Header().Add("X-Rate-Limit-Request-Forwarded-For", r.Header.Get("X-Forwarded-For"))
+	w.Header().Add("X-Rate-Limit-Request-Remote-Addr", r.RemoteAddr)
 }
 
 // LimitHandler is a middleware that performs rate-limiting given http.Handler struct.
 func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
-		SetResponseHeaders(lmt, w)
+		setResponseHeaders(lmt, w, r)
 
 		httpError := LimitByRequest(lmt, r)
 		if httpError != nil {
