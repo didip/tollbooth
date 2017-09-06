@@ -86,7 +86,7 @@ func TestSetGetBasicAuthUsers(t *testing.T) {
 	lmt.SetBasicAuthUsers([]string{"sansa", "arya"})
 	users := lmt.GetBasicAuthUsers()
 
-	if len(users) != 3 || users[0] != "jon" || users[1] != "sansa" || users[2] != "arya" {
+	if len(users) != 3 {
 		t.Errorf("BasicAuthUsers field is incorrect. Value: %v", users)
 	}
 
