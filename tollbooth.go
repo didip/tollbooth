@@ -45,7 +45,7 @@ func LimitByRequest(limiter *limiter.Limiter, r *http.Request) *errors.HTTPError
 
 // BuildKeys generates a slice of keys to rate-limit by given limiter and request structs.
 func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
-	remoteIP := libstring.RemoteIP(limiter.GetIPLookups(), r)
+	remoteIP := libstring.RemoteIP(limiter.GetIPLookups(), limiter.GetForwardedForIndexFromBehind(), r)
 	path := r.URL.Path
 	sliceKeys := make([][]string, 0)
 

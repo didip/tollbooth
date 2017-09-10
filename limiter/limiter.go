@@ -19,6 +19,7 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 		SetStatusCode(429).
 		SetOnLimitReached(nil).
 		SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
+		SetForwardedForIndexFromBehind(0).
 		SetHeaders(make(map[string][]string))
 
 	if generalExpirableOptions != nil {
@@ -74,6 +75,8 @@ type Limiter struct {
 	// Default is "RemoteAddr", "X-Forwarded-For", "X-Real-IP".
 	// You can rearrange the order as you like.
 	ipLookups []string
+
+	forwardedForIndex int
 
 	// List of HTTP Methods to limit (GET, POST, PUT, etc.).
 	// Empty means limit all methods.
@@ -261,6 +264,22 @@ func (l *Limiter) GetIPLookups() []string {
 	l.RLock()
 	defer l.RUnlock()
 	return l.ipLookups
+}
+
+// SetForwardedForIndexFromBehind is thread-safe way of setting which X-Forwarded-For index to choose.
+func (l *Limiter) SetForwardedForIndexFromBehind(forwardedForIndex int) *Limiter {
+	l.Lock()
+	l.forwardedForIndex = forwardedForIndex
+	l.Unlock()
+
+	return l
+}
+
+// GetForwardedForIndexFromBehind is thread-safe way of getting which X-Forwarded-For index to choose.
+func (l *Limiter) GetForwardedForIndexFromBehind() int {
+	l.RLock()
+	defer l.RUnlock()
+	return l.forwardedForIndex
 }
 
 // SetMethods is thread-safe way of setting list of HTTP Methods to limit (GET, POST, PUT, etc.).
