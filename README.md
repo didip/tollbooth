@@ -12,6 +12,13 @@ This is a generic middleware to rate-limit HTTP requests.
 **NOTE 3:** Major version changes are backward-incompatible. `v2.0.0` streamlines the ugliness of the old API.
 
 
+## Versions
+
+**v1.0.0:** This version maintains the old API but all of the thirdparty modules are moved to their own repo.
+
+**v2.x.x:** Brand new API for the sake of code cleanup, thread safety, & auto-expiring data structures.
+
+
 ## Five Minutes Tutorial
 ```go
 package main
