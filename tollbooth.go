@@ -12,6 +12,14 @@ import (
 	"github.com/didip/tollbooth/limiter"
 )
 
+// setResponseHeaders configures X-Rate-Limit-Limit and X-Rate-Limit-Duration
+func setResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("X-Rate-Limit-Limit", strconv.FormatInt(lmt.GetMax(), 10))
+	w.Header().Add("X-Rate-Limit-Duration", lmt.GetTTL().String())
+	w.Header().Add("X-Rate-Limit-Request-Forwarded-For", r.Header.Get("X-Forwarded-For"))
+	w.Header().Add("X-Rate-Limit-Request-Remote-Addr", r.RemoteAddr)
+}
+
 // NewLimiter is a convenience function to limiter.New.
 func NewLimiter(max int64, ttl time.Duration, tbOptions *limiter.ExpirableOptions) *limiter.Limiter {
 	return limiter.New(tbOptions).SetMax(max).SetTTL(ttl)
@@ -19,33 +27,17 @@ func NewLimiter(max int64, ttl time.Duration, tbOptions *limiter.ExpirableOption
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.
 // It returns HTTPError when limit is exceeded.
-func LimitByKeys(limiter *limiter.Limiter, keys []string) *errors.HTTPError {
-	if limiter.LimitReached(strings.Join(keys, "|")) {
-		return &errors.HTTPError{Message: limiter.GetMessage(), StatusCode: limiter.GetStatusCode()}
-	}
-
-	return nil
-}
-
-// LimitByRequest builds keys based on http.Request struct,
-// loops through all the keys, and check if any one of them returns HTTPError.
-func LimitByRequest(limiter *limiter.Limiter, r *http.Request) *errors.HTTPError {
-	sliceKeys := BuildKeys(limiter, r)
-
-	// Loop sliceKeys and check if one of them has error.
-	for _, keys := range sliceKeys {
-		httpError := LimitByKeys(limiter, keys)
-		if httpError != nil {
-			return httpError
-		}
+func LimitByKeys(lmt *limiter.Limiter, keys []string) *errors.HTTPError {
+	if lmt.LimitReached(strings.Join(keys, "|")) {
+		return &errors.HTTPError{Message: lmt.GetMessage(), StatusCode: lmt.GetStatusCode()}
 	}
 
 	return nil
 }
 
 // BuildKeys generates a slice of keys to rate-limit by given limiter and request structs.
-func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
-	remoteIP := libstring.RemoteIP(limiter.GetIPLookups(), limiter.GetForwardedForIndexFromBehind(), r)
+func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
+	remoteIP := libstring.RemoteIP(lmt.GetIPLookups(), lmt.GetForwardedForIndexFromBehind(), r)
 	path := r.URL.Path
 	sliceKeys := make([][]string, 0)
 
@@ -54,21 +46,21 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 		return sliceKeys
 	}
 
-	limiterMethods := limiter.GetMethods()
-	limiterHeaders := limiter.GetHeaders()
-	limiterBasicAuthUsers := limiter.GetBasicAuthUsers()
+	lmtMethods := lmt.GetMethods()
+	lmtHeaders := lmt.GetHeaders()
+	lmtBasicAuthUsers := lmt.GetBasicAuthUsers()
 
-	limiterHeadersIsSet := limiterHeaders != nil && len(limiterHeaders) > 0
-	limiterBasicAuthUsersIsSet := limiterBasicAuthUsers != nil && len(limiterBasicAuthUsers) > 0
+	lmtHeadersIsSet := lmtHeaders != nil && len(lmtHeaders) > 0
+	lmtBasicAuthUsersIsSet := lmtBasicAuthUsers != nil && len(lmtBasicAuthUsers) > 0
 
-	if limiterMethods != nil && limiterHeadersIsSet && limiterBasicAuthUsersIsSet {
+	if lmtMethods != nil && lmtHeadersIsSet && lmtBasicAuthUsersIsSet {
 		// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.
-		if libstring.StringInSlice(limiterMethods, r.Method) {
-			for headerKey, headerValues := range limiterHeaders {
+		if libstring.StringInSlice(lmtMethods, r.Method) {
+			for headerKey, headerValues := range lmtHeaders {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 					// If header values are empty, rate-limit all request with headerKey.
 					username, _, ok := r.BasicAuth()
-					if ok && libstring.StringInSlice(limiterBasicAuthUsers, username) {
+					if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
 						sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, username})
 					}
 
@@ -76,7 +68,7 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 					// If header values are not empty, rate-limit all request with headerKey and headerValues.
 					for _, headerValue := range headerValues {
 						username, _, ok := r.BasicAuth()
-						if ok && libstring.StringInSlice(limiterBasicAuthUsers, username) {
+						if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
 							sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, headerValue, username})
 						}
 					}
@@ -84,10 +76,10 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 
-	} else if limiterMethods != nil && limiterHeadersIsSet {
+	} else if lmtMethods != nil && lmtHeadersIsSet {
 		// Limit by HTTP methods and HTTP headers+values.
-		if libstring.StringInSlice(limiterMethods, r.Method) {
-			for headerKey, headerValues := range limiterHeaders {
+		if libstring.StringInSlice(lmtMethods, r.Method) {
+			for headerKey, headerValues := range lmtHeaders {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 					// If header values are empty, rate-limit all request with headerKey.
 					sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey})
@@ -101,24 +93,24 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 
-	} else if limiterMethods != nil && limiterBasicAuthUsersIsSet {
+	} else if lmtMethods != nil && lmtBasicAuthUsersIsSet {
 		// Limit by HTTP methods and Basic Auth credentials.
-		if libstring.StringInSlice(limiterMethods, r.Method) {
+		if libstring.StringInSlice(lmtMethods, r.Method) {
 			username, _, ok := r.BasicAuth()
-			if ok && libstring.StringInSlice(limiterBasicAuthUsers, username) {
+			if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
 				sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, username})
 			}
 		}
 
-	} else if limiterMethods != nil {
+	} else if lmtMethods != nil {
 		// Limit by HTTP methods.
-		if libstring.StringInSlice(limiterMethods, r.Method) {
+		if libstring.StringInSlice(lmtMethods, r.Method) {
 			sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method})
 		}
 
-	} else if limiterHeadersIsSet {
+	} else if lmtHeadersIsSet {
 		// Limit by HTTP headers+values.
-		for headerKey, headerValues := range limiterHeaders {
+		for headerKey, headerValues := range lmtHeaders {
 			if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 				// If header values are empty, rate-limit all request with headerKey.
 				sliceKeys = append(sliceKeys, []string{remoteIP, path, headerKey})
@@ -131,10 +123,10 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 
-	} else if limiterBasicAuthUsersIsSet {
+	} else if lmtBasicAuthUsersIsSet {
 		// Limit by Basic Auth credentials.
 		username, _, ok := r.BasicAuth()
-		if ok && libstring.StringInSlice(limiterBasicAuthUsers, username) {
+		if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
 			sliceKeys = append(sliceKeys, []string{remoteIP, path, username})
 		}
 	} else {
@@ -145,20 +137,28 @@ func BuildKeys(limiter *limiter.Limiter, r *http.Request) [][]string {
 	return sliceKeys
 }
 
-// setResponseHeaders configures X-Rate-Limit-Limit and X-Rate-Limit-Duration
-func setResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("X-Rate-Limit-Limit", strconv.FormatInt(lmt.GetMax(), 10))
-	w.Header().Add("X-Rate-Limit-Duration", lmt.GetTTL().String())
-	w.Header().Add("X-Rate-Limit-Request-Forwarded-For", r.Header.Get("X-Forwarded-For"))
-	w.Header().Add("X-Rate-Limit-Request-Remote-Addr", r.RemoteAddr)
+// LimitByRequest builds keys based on http.Request struct,
+// loops through all the keys, and check if any one of them returns HTTPError.
+func LimitByRequest(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) *errors.HTTPError {
+	setResponseHeaders(lmt, w, r)
+
+	sliceKeys := BuildKeys(lmt, r)
+
+	// Loop sliceKeys and check if one of them has error.
+	for _, keys := range sliceKeys {
+		httpError := LimitByKeys(lmt, keys)
+		if httpError != nil {
+			return httpError
+		}
+	}
+
+	return nil
 }
 
 // LimitHandler is a middleware that performs rate-limiting given http.Handler struct.
 func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
-		setResponseHeaders(lmt, w, r)
-
-		httpError := LimitByRequest(lmt, r)
+		httpError := LimitByRequest(lmt, w, r)
 		if httpError != nil {
 			w.Header().Add("Content-Type", lmt.GetMessageContentType())
 			w.WriteHeader(httpError.StatusCode)
