@@ -160,11 +160,10 @@ func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
 		httpError := LimitByRequest(lmt, w, r)
 		if httpError != nil {
+			lmt.ExecOnLimitReached(w, r)
 			w.Header().Add("Content-Type", lmt.GetMessageContentType())
 			w.WriteHeader(httpError.StatusCode)
 			w.Write([]byte(httpError.Message))
-
-			lmt.ExecOnLimitReached(w, r)
 			return
 		}
 
