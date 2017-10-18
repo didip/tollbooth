@@ -25,26 +25,30 @@ func Test_Issue48_RequestTerminatedEvenOnLowVolumeOnSameIP(t *testing.T) {
 		w.Write([]byte(`hello world`))
 	}))
 
-	// Why 11 times?
-	// Because 11 * 2 = 22, and our limit is 20.
-	// If the bug report is as what I understood, then this test is expected to break.
-	tries := 11
-	for i := 0; i < tries; i++ {
-		// Twice per second should not be limited
-		for j := 0; j < 2; j++ {
+	// The issue seen by the reporter is that the limiter slowly "leaks", causing requests
+	// to fail after a prolonged period of continuous usage. Try to model that here.
+	//
+	// Report stated that a constant 2 requests per second over several minutes would cause
+	// a limit of 20/req/sec to start returning 429.
+	timeout := time.After(10 * time.Minute)
+	iterations := 0
+	start := time.Now()
+	for {
+		select {
+		case <-timeout:
+			break
+		case <-time.After(500 * time.Millisecond):
 			req, _ := http.NewRequest("GET", "/doesntmatter", nil)
 			req.RemoteAddr = "127.0.0.1"
 
 			rr := httptest.NewRecorder()
 			handler.ServeHTTP(rr, req)
 
-			//Should not be limited
 			if status := rr.Code; status != http.StatusOK {
-				t.Fatalf("Should be able to handle 20 reqs/second. HTTP status: %v. Expected HTTP status: %v", status, http.StatusOK)
+				t.Fatalf("Should be able to handle 20 reqs/second. HTTP status: %v. Expected HTTP status: %v. Failed after %d iterations in %f seconds.", status, http.StatusOK, iterations, time.Since(start).Seconds())
 			}
+			iterations++
 		}
-
-		time.Sleep(time.Second)
 	}
 
 	if limitReachedCounter > 0 {
