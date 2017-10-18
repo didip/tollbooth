@@ -49,19 +49,19 @@ func main() {
         "github.com/didip/tollbooth/limiter"
     )
 
-    lmt := tollbooth.NewLimiter(1, time.Second, nil)
+    lmt := tollbooth.NewLimiter(1, nil)
 
     // or create a limiter with expirable token buckets
     // This setting means:
     // create a 1 request/second limiter and
     // every token bucket in it will expire 1 hour after it was initially set.
-    lmt = tollbooth.NewLimiter(1, time.Second, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
+    lmt = tollbooth.NewLimiter(1, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
 
     // Configure list of places to look for IP address.
     // By default it's: "RemoteAddr", "X-Forwarded-For", "X-Real-IP"
     // If your application is behind a proxy, set "X-Forwarded-For" first.
     lmt.SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"})
- 
+
     // Limit only GET and POST requests.
     lmt.SetMethods([]string{"GET", "POST"})
 

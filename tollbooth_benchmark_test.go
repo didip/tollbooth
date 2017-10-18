@@ -11,7 +11,7 @@ import (
 )
 
 func BenchmarkLimitByKeys(b *testing.B) {
-	lmt := limiter.New(nil).SetMax(1).SetTTL(time.Second) // Only 1 request per second is allowed.
+	lmt := limiter.New(nil).SetMax(1) // Only 1 request per second is allowed.
 
 	for i := 0; i < b.N; i++ {
 		LimitByKeys(lmt, []string{"127.0.0.1", "/"})
@@ -21,7 +21,7 @@ func BenchmarkLimitByKeys(b *testing.B) {
 func BenchmarkLimitByKeysWithExpiringBuckets(b *testing.B) {
 	lmt := limiter.New(
 		&limiter.ExpirableOptions{DefaultExpirationTTL: time.Minute, ExpireJobInterval: time.Minute},
-	).SetMax(1).SetTTL(time.Second) // Only 1 request per second is allowed.
+	).SetMax(1) // Only 1 request per second is allowed.
 
 	for i := 0; i < b.N; i++ {
 		LimitByKeys(lmt, []string{"127.0.0.1", "/"})
@@ -29,7 +29,7 @@ func BenchmarkLimitByKeysWithExpiringBuckets(b *testing.B) {
 }
 
 func BenchmarkBuildKeys(b *testing.B) {
-	lmt := limiter.New(nil).SetMax(1).SetTTL(time.Second) // Only 1 request per second is allowed.
+	lmt := limiter.New(nil).SetMax(1) // Only 1 request per second is allowed.
 	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
 	lmt.SetHeaders(make(map[string][]string))
 	lmt.SetHeader("X-Real-IP", []string{"2601:7:1c82:4097:59a0:a80b:2841:b8c8"})

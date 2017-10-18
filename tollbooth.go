@@ -15,14 +15,14 @@ import (
 // setResponseHeaders configures X-Rate-Limit-Limit and X-Rate-Limit-Duration
 func setResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("X-Rate-Limit-Limit", strconv.FormatInt(lmt.GetMax(), 10))
-	w.Header().Add("X-Rate-Limit-Duration", lmt.GetTTL().String())
+	w.Header().Add("X-Rate-Limit-Duration", "1")
 	w.Header().Add("X-Rate-Limit-Request-Forwarded-For", r.Header.Get("X-Forwarded-For"))
 	w.Header().Add("X-Rate-Limit-Request-Remote-Addr", r.RemoteAddr)
 }
 
 // NewLimiter is a convenience function to limiter.New.
 func NewLimiter(max int64, ttl time.Duration, tbOptions *limiter.ExpirableOptions) *limiter.Limiter {
-	return limiter.New(tbOptions).SetMax(max).SetTTL(ttl)
+	return limiter.New(tbOptions).SetMax(max)
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.
