@@ -439,7 +439,7 @@ func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time
 		return false
 	}
 
-	return !expiringMap.(*rate.Limiter).AllowN(time.Now(), 1)
+	return !expiringMap.(*rate.Limiter).Allow()
 }
 
 // LimitReached returns a bool indicating if the Bucket identified by key ran out of tokens.
