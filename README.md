@@ -136,7 +136,7 @@ func main() {
 6. Tollbooth does not require external storage since it uses an algorithm called [Token Bucket](http://en.wikipedia.org/wiki/Token_bucket) [(Go library: golang.org/x/time/rate)](//godoc.org/golang.org/x/time/rate).
 
 
-# Other Web Frameworks
+## Other Web Frameworks
 
 Sometimes, other frameworks require a little bit of shim to use Tollbooth. These shims below are contributed by the community, so I make no promises on how well they work. The one I am familiar with are: Chi, Gin, and Negroni.
 
@@ -155,3 +155,10 @@ Sometimes, other frameworks require a little bit of shim to use Tollbooth. These
 * [Iris](https://github.com/didip/tollbooth_iris)
 
 * [Negroni](https://github.com/didip/tollbooth_negroni)
+
+
+## My other Go libraries
+
+* [Stopwatch](https://github.com/didip/stopwatch): A small library to measure latency of things. Useful if you want to report latency data to Graphite.
+
+* [Gomet](https://github.com/didip/gomet): Simple HTTP client & server long poll library for Go. Useful for receiving live updates without needing Websocket.
