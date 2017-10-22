@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/didip/tollbooth/errors"
 	"github.com/didip/tollbooth/libstring"
@@ -21,7 +20,7 @@ func setResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Req
 }
 
 // NewLimiter is a convenience function to limiter.New.
-func NewLimiter(max int64, ttl time.Duration, tbOptions *limiter.ExpirableOptions) *limiter.Limiter {
+func NewLimiter(max int64, tbOptions *limiter.ExpirableOptions) *limiter.Limiter {
 	return limiter.New(tbOptions).SetMax(max)
 }
 
@@ -50,8 +49,8 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 	lmtHeaders := lmt.GetHeaders()
 	lmtBasicAuthUsers := lmt.GetBasicAuthUsers()
 
-	lmtHeadersIsSet := lmtHeaders != nil && len(lmtHeaders) > 0
-	lmtBasicAuthUsersIsSet := lmtBasicAuthUsers != nil && len(lmtBasicAuthUsers) > 0
+	lmtHeadersIsSet := len(lmtHeaders) > 0
+	lmtBasicAuthUsersIsSet := len(lmtBasicAuthUsers) > 0
 
 	if lmtMethods != nil && lmtHeadersIsSet && lmtBasicAuthUsersIsSet {
 		// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.
