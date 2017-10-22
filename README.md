@@ -18,6 +18,8 @@ This is a generic middleware to rate-limit HTTP requests.
 
 **v2.x.x:** Brand new API for the sake of code cleanup, thread safety, & auto-expiring data structures.
 
+**v3.x.x:** Apparently we have been using golang.org/x/time/rate incorrectly. See issue #48. It always limit X number per 1 second. The time duration is not changeable, so it does not make sense to pass TTL to tollbooth.
+
 
 ## Five Minutes Tutorial
 ```go
