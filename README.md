@@ -35,7 +35,7 @@ func HelloHandler(w http.ResponseWriter, req *http.Request) {
 
 func main() {
     // Create a request limiter per handler.
-    http.Handle("/", tollbooth.LimitFuncHandler(tollbooth.NewLimiter(1, time.Second, nil), HelloHandler))
+    http.Handle("/", tollbooth.LimitFuncHandler(tollbooth.NewLimiter(1, nil), HelloHandler))
     http.ListenAndServe(":12345", nil)
 }
 ```
@@ -93,7 +93,7 @@ func main() {
     ```go
     import "time"
 
-    lmt := tollbooth.NewLimiter(1, time.Second, nil)
+    lmt := tollbooth.NewLimiter(1, nil)
 
     // Set a custom expiration TTL for token bucket.
     lmt.SetTokenBucketExpirationTTL(time.Hour)
@@ -119,7 +119,7 @@ func main() {
 5. Customize your own message or function when limit is reached.
 
     ```go
-    lmt := tollbooth.NewLimiter(1, time.Second, nil)
+    lmt := tollbooth.NewLimiter(1, nil)
 
     // Set a custom message.
     lmt.SetMessage("You have reached maximum request limit.")
