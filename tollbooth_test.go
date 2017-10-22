@@ -11,7 +11,7 @@ import (
 )
 
 func TestLimitByKeys(t *testing.T) {
-	lmt := NewLimiter(1, time.Second, nil) // Only 1 request per second is allowed.
+	lmt := NewLimiter(1, nil) // Only 1 request per second is allowed.
 
 	httperror := LimitByKeys(lmt, []string{"127.0.0.1", "/"})
 	if httperror != nil {
@@ -31,7 +31,7 @@ func TestLimitByKeys(t *testing.T) {
 }
 
 func TestDefaultBuildKeys(t *testing.T) {
-	lmt := NewLimiter(1, time.Second, nil)
+	lmt := NewLimiter(1, nil)
 	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -59,7 +59,7 @@ func TestDefaultBuildKeys(t *testing.T) {
 }
 
 func TestBasicAuthBuildKeys(t *testing.T) {
-	lmt := NewLimiter(1, time.Second, nil)
+	lmt := NewLimiter(1, nil)
 	lmt.SetBasicAuthUsers([]string{"bro"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -90,7 +90,7 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 }
 
 func TestCustomHeadersBuildKeys(t *testing.T) {
-	lmt := NewLimiter(1, time.Second, nil)
+	lmt := NewLimiter(1, nil)
 	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -123,7 +123,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 }
 
 func TestRequestMethodBuildKeys(t *testing.T) {
-	lmt := NewLimiter(1, time.Second, nil)
+	lmt := NewLimiter(1, nil)
 	lmt.SetMethods([]string{"GET"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -152,7 +152,7 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 }
 
 func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
-	lmt := NewLimiter(1, time.Second, nil)
+	lmt := NewLimiter(1, nil)
 	lmt.SetMethods([]string{"GET"})
 	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 
@@ -189,7 +189,7 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 }
 
 func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
-	lmt := NewLimiter(1, time.Second, nil)
+	lmt := NewLimiter(1, nil)
 	lmt.SetMethods([]string{"GET"})
 	lmt.SetBasicAuthUsers([]string{"bro"})
 
@@ -223,7 +223,7 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 }
 
 func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
-	lmt := NewLimiter(1, time.Second, nil)
+	lmt := NewLimiter(1, nil)
 	lmt.SetMethods([]string{"GET"})
 	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 	lmt.SetBasicAuthUsers([]string{"bro"})
@@ -266,7 +266,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 }
 
 func TestLimitHandler(t *testing.T) {
-	lmt := limiter.New(nil).SetMax(1).SetTTL(time.Second)
+	lmt := limiter.New(nil).SetMax(1)
 	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
 	lmt.SetMethods([]string{"POST"})
 

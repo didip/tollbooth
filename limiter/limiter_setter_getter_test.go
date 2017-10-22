@@ -2,11 +2,10 @@ package limiter
 
 import (
 	"testing"
-	"time"
 )
 
 func TestSetGetMessage(t *testing.T) {
-	lmt := New(nil).SetMax(1).SetTTL(time.Second)
+	lmt := New(nil).SetMax(1)
 
 	// Check default
 	if lmt.GetMessage() != "You have reached maximum request limit." {
@@ -19,7 +18,7 @@ func TestSetGetMessage(t *testing.T) {
 }
 
 func TestSetGetMessageContentType(t *testing.T) {
-	lmt := New(nil).SetMax(1).SetTTL(time.Second)
+	lmt := New(nil).SetMax(1)
 
 	// Check default
 	if lmt.GetMessageContentType() != "text/plain; charset=utf-8" {
@@ -32,7 +31,7 @@ func TestSetGetMessageContentType(t *testing.T) {
 }
 
 func TestSetGetStatusCode(t *testing.T) {
-	lmt := New(nil).SetMax(1).SetTTL(time.Second)
+	lmt := New(nil).SetMax(1)
 
 	// Check default
 	if lmt.GetStatusCode() != 429 {
@@ -45,7 +44,7 @@ func TestSetGetStatusCode(t *testing.T) {
 }
 
 func TestSetGetIPLookups(t *testing.T) {
-	lmt := New(nil).SetMax(1).SetTTL(time.Second)
+	lmt := New(nil).SetMax(1)
 
 	// Check default
 	if len(lmt.GetIPLookups()) != 3 {
@@ -58,7 +57,7 @@ func TestSetGetIPLookups(t *testing.T) {
 }
 
 func TestSetGetMethods(t *testing.T) {
-	lmt := New(nil).SetMax(1).SetTTL(time.Second)
+	lmt := New(nil).SetMax(1)
 
 	// Check default
 	if len(lmt.GetMethods()) != 0 {
@@ -71,7 +70,7 @@ func TestSetGetMethods(t *testing.T) {
 }
 
 func TestSetGetBasicAuthUsers(t *testing.T) {
-	lmt := New(nil).SetMax(1).SetTTL(time.Second)
+	lmt := New(nil).SetMax(1)
 
 	// Check default
 	if len(lmt.GetBasicAuthUsers()) != 0 {
@@ -108,7 +107,7 @@ func TestSetGetBasicAuthUsers(t *testing.T) {
 }
 
 func TestSetGetHeaders(t *testing.T) {
-	lmt := New(nil).SetMax(1).SetTTL(time.Second)
+	lmt := New(nil).SetMax(1)
 
 	// Check default
 	if len(lmt.GetHeaders()) != 0 {

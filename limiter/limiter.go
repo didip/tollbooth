@@ -53,11 +53,8 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 
 // Limiter is a config struct to limit a particular request handler.
 type Limiter struct {
-	// Maximum number of requests to limit per duration.
+	// Maximum number of requests to limit per second.
 	max int64
-
-	// Duration of rate-limiter.
-	ttl time.Duration
 
 	// HTTP message when limit is reached.
 	message string
@@ -164,22 +161,6 @@ func (l *Limiter) GetMax() int64 {
 	l.RLock()
 	defer l.RUnlock()
 	return l.max
-}
-
-// SetTTL is thread-safe way of setting maximum number of requests to limit per duration.
-func (l *Limiter) SetTTL(ttl time.Duration) *Limiter {
-	l.Lock()
-	l.ttl = ttl
-	l.Unlock()
-
-	return l
-}
-
-// GetTTL is thread-safe way of getting maximum number of requests to limit per duration.
-func (l *Limiter) GetTTL() time.Duration {
-	l.RLock()
-	defer l.RUnlock()
-	return l.ttl
 }
 
 // SetMessage is thread-safe way of setting HTTP message when limit is reached.
@@ -441,7 +422,6 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 
 func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
 	lmtMax := l.GetMax()
-	lmtTTL := l.GetTTL()
 
 	l.Lock()
 	defer l.Unlock()
@@ -449,7 +429,7 @@ func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time
 	if _, found := l.tokenBuckets.Get(key); !found {
 		l.tokenBuckets.Set(
 			key,
-			rate.NewLimiter(rate.Every(lmtTTL), int(lmtMax)),
+			rate.NewLimiter(rate.Limit(lmtMax), 1),
 			tokenBucketTTL,
 		)
 	}
@@ -459,7 +439,7 @@ func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time
 		return false
 	}
 
-	return !expiringMap.(*rate.Limiter).AllowN(time.Now(), 1)
+	return !expiringMap.(*rate.Limiter).Allow()
 }
 
 // LimitReached returns a bool indicating if the Bucket identified by key ran out of tokens.
