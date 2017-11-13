@@ -21,7 +21,7 @@ func setResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Req
 
 // NewLimiter is a convenience function to limiter.New.
 func NewLimiter(max int64, tbOptions *limiter.ExpirableOptions) *limiter.Limiter {
-	return limiter.New(tbOptions).SetMax(max)
+	return limiter.New(tbOptions).SetMax(max).SetBurst(int(max))
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.

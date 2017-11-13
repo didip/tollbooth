@@ -33,7 +33,7 @@ func TestConstructorExpiringBuckets(t *testing.T) {
 }
 
 func TestLimitReached(t *testing.T) {
-	lmt := New(nil).SetMax(1)
+	lmt := New(nil).SetMax(1).SetBurst(1)
 	key := "127.0.0.1|/"
 
 	if lmt.LimitReached(key) == true {
@@ -51,7 +51,7 @@ func TestLimitReached(t *testing.T) {
 }
 
 func TestLimitReachedWithCustomTokenBucketTTL(t *testing.T) {
-	lmt := New(&ExpirableOptions{DefaultExpirationTTL: time.Second, ExpireJobInterval: 0}).SetMax(1)
+	lmt := New(&ExpirableOptions{DefaultExpirationTTL: time.Second, ExpireJobInterval: 0}).SetMax(1).SetBurst(1)
 	key := "127.0.0.1|/"
 
 	if lmt.LimitReached(key) == true {
@@ -71,7 +71,7 @@ func TestLimitReachedWithCustomTokenBucketTTL(t *testing.T) {
 func TestMuchHigherMaxRequests(t *testing.T) {
 	numRequests := 1000
 	delay := (1 * time.Second) / time.Duration(numRequests)
-	lmt := New(nil).SetMax(int64(numRequests))
+	lmt := New(nil).SetMax(int64(numRequests)).SetBurst(1)
 	key := "127.0.0.1|/"
 
 	for i := 0; i < numRequests; i++ {
@@ -90,7 +90,7 @@ func TestMuchHigherMaxRequests(t *testing.T) {
 func TestMuchHigherMaxRequestsWithCustomTokenBucketTTL(t *testing.T) {
 	numRequests := 1000
 	delay := (1 * time.Second) / time.Duration(numRequests)
-	lmt := New(&ExpirableOptions{DefaultExpirationTTL: time.Minute, ExpireJobInterval: time.Minute}).SetMax(int64(numRequests))
+	lmt := New(&ExpirableOptions{DefaultExpirationTTL: time.Minute, ExpireJobInterval: time.Minute}).SetMax(int64(numRequests)).SetBurst(1)
 	key := "127.0.0.1|/"
 
 	for i := 0; i < numRequests; i++ {
