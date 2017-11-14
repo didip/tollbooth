@@ -178,7 +178,7 @@ func (l *Limiter) SetBurst(burst int) *Limiter {
 // GetBurst is thread-safe way of setting maximum burst size.
 func (l *Limiter) GetBurst() int {
 	l.RLock()
-	l.RUnlock()
+	defer l.RUnlock()
 
 	return l.burst
 }
