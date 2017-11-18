@@ -56,6 +56,9 @@ type Limiter struct {
 	// Maximum number of requests to limit per second.
 	max int64
 
+	// Limiter burst size
+	burst int
+
 	// HTTP message when limit is reached.
 	message string
 
@@ -161,6 +164,23 @@ func (l *Limiter) GetMax() int64 {
 	l.RLock()
 	defer l.RUnlock()
 	return l.max
+}
+
+// SetBurst is thread-safe way of setting maximum burst size.
+func (l *Limiter) SetBurst(burst int) *Limiter {
+	l.Lock()
+	l.burst = burst
+	l.Unlock()
+
+	return l
+}
+
+// GetBurst is thread-safe way of setting maximum burst size.
+func (l *Limiter) GetBurst() int {
+	l.RLock()
+	defer l.RUnlock()
+
+	return l.burst
 }
 
 // SetMessage is thread-safe way of setting HTTP message when limit is reached.
@@ -422,14 +442,14 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 
 func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
 	lmtMax := l.GetMax()
-
+	lmtBurst := l.GetBurst()
 	l.Lock()
 	defer l.Unlock()
 
 	if _, found := l.tokenBuckets.Get(key); !found {
 		l.tokenBuckets.Set(
 			key,
-			rate.NewLimiter(rate.Limit(lmtMax), 1),
+			rate.NewLimiter(rate.Limit(lmtMax), lmtBurst),
 			tokenBucketTTL,
 		)
 	}
