@@ -2,6 +2,7 @@
 package libstring
 
 import (
+	"net"
 	"net/http"
 	"strings"
 )
@@ -16,14 +17,6 @@ func StringInSlice(sliceString []string, needle string) bool {
 	return false
 }
 
-func ipAddrFromRemoteAddr(s string) string {
-	idx := strings.LastIndex(s, ":")
-	if idx == -1 {
-		return s
-	}
-	return s[:idx]
-}
-
 // RemoteIP finds IP Address given http.Request struct.
 func RemoteIP(ipLookups []string, forwardedForIndexFromBehind int, r *http.Request) string {
 	realIP := r.Header.Get("X-Real-IP")
@@ -31,7 +24,8 @@ func RemoteIP(ipLookups []string, forwardedForIndexFromBehind int, r *http.Reque
 
 	for _, lookup := range ipLookups {
 		if lookup == "RemoteAddr" {
-			return ipAddrFromRemoteAddr(r.RemoteAddr)
+			ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+			return ip
 		}
 		if lookup == "X-Forwarded-For" && forwardedFor != "" {
 			// X-Forwarded-For is potentially a list of addresses separated with ","

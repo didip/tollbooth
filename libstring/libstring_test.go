@@ -12,12 +12,6 @@ func TestStringInSlice(t *testing.T) {
 	}
 }
 
-func TestIPAddrFromRemoteAddr(t *testing.T) {
-	if ipAddrFromRemoteAddr("127.0.0.1:8989") != "127.0.0.1" {
-		t.Errorf("ipAddrFromRemoteAddr did not chop the port number correctly.")
-	}
-}
-
 func TestRemoteIPDefault(t *testing.T) {
 	ipLookups := []string{"RemoteAddr", "X-Real-IP"}
 	ipv6 := "2601:7:1c82:4097:59a0:a80b:2841:b8c8"
