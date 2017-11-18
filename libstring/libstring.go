@@ -24,7 +24,12 @@ func RemoteIP(ipLookups []string, forwardedForIndexFromBehind int, r *http.Reque
 
 	for _, lookup := range ipLookups {
 		if lookup == "RemoteAddr" {
-			ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+			// 1. Cover the basic use cases for both ipv4 and ipv6
+			ip, _, err := net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				// 2. Upon error, just return the remote addr.
+				return r.RemoteAddr
+			}
 			return ip
 		}
 		if lookup == "X-Forwarded-For" && forwardedFor != "" {
