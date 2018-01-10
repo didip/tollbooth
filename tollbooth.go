@@ -141,7 +141,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 func LimitByRequest(lmt *limiter.Limiter, r *http.Request) bool {
 	sliceKeys := BuildKeys(lmt, r)
 
-	// Loop sliceKeys and check if one of them has error.
+	// Loop sliceKeys and check if one of them return true (exceed rate limit)
 	for _, keys := range sliceKeys {
 		if LimitByKeys(lmt, keys) {
 			return true
