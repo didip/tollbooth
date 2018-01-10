@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/didip/tollbooth/errors"
 	"github.com/didip/tollbooth/libstring"
 	"github.com/didip/tollbooth/limiter"
 )
@@ -25,13 +24,13 @@ func NewLimiter(max int64, tbOptions *limiter.ExpirableOptions) *limiter.Limiter
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.
-// It returns HTTPError when limit is exceeded.
-func LimitByKeys(lmt *limiter.Limiter, keys []string) *errors.HTTPError {
+// It returns true when limit is exceeded.
+func LimitByKeys(lmt *limiter.Limiter, keys []string) bool {
 	if lmt.LimitReached(strings.Join(keys, "|")) {
-		return &errors.HTTPError{Message: lmt.GetMessage(), StatusCode: lmt.GetStatusCode()}
+		return true
 	}
 
-	return nil
+	return false
 }
 
 // BuildKeys generates a slice of keys to rate-limit by given limiter and request structs.
@@ -137,32 +136,31 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 }
 
 // LimitByRequest builds keys based on http.Request struct,
-// loops through all the keys, and check if any one of them returns HTTPError.
-func LimitByRequest(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) *errors.HTTPError {
+// loops through all the keys, and check if any one of them returns true.
+// returns true if rate limit exceeds
+func LimitByRequest(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) bool {
 	setResponseHeaders(lmt, w, r)
 
 	sliceKeys := BuildKeys(lmt, r)
 
 	// Loop sliceKeys and check if one of them has error.
 	for _, keys := range sliceKeys {
-		httpError := LimitByKeys(lmt, keys)
-		if httpError != nil {
-			return httpError
+		if LimitByKeys(lmt, keys) {
+			return true
 		}
 	}
 
-	return nil
+	return false
 }
 
 // LimitHandler is a middleware that performs rate-limiting given http.Handler struct.
 func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
-		httpError := LimitByRequest(lmt, w, r)
-		if httpError != nil {
+		if LimitByRequest(lmt, w, r) {
 			lmt.ExecOnLimitReached(w, r)
 			w.Header().Add("Content-Type", lmt.GetMessageContentType())
-			w.WriteHeader(httpError.StatusCode)
-			w.Write([]byte(httpError.Message))
+			w.WriteHeader(lmt.GetStatusCode())
+			w.Write([]byte(lmt.GetMessage()))
 			return
 		}
 
