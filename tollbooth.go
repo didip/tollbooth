@@ -138,9 +138,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 // LimitByRequest builds keys based on http.Request struct,
 // loops through all the keys, and check if any one of them returns true.
 // returns true if rate limit exceeds
-func LimitByRequest(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) bool {
-	setResponseHeaders(lmt, w, r)
-
+func LimitByRequest(lmt *limiter.Limiter, r *http.Request) bool {
 	sliceKeys := BuildKeys(lmt, r)
 
 	// Loop sliceKeys and check if one of them has error.
@@ -156,7 +154,8 @@ func LimitByRequest(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request
 // LimitHandler is a middleware that performs rate-limiting given http.Handler struct.
 func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 	middle := func(w http.ResponseWriter, r *http.Request) {
-		if LimitByRequest(lmt, w, r) {
+		setResponseHeaders(lmt, w, r)
+		if LimitByRequest(lmt, r) {
 			lmt.ExecOnLimitReached(w, r)
 			w.Header().Add("Content-Type", lmt.GetMessageContentType())
 			w.WriteHeader(lmt.GetStatusCode())
