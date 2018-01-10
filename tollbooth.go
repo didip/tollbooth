@@ -26,11 +26,7 @@ func NewLimiter(max int64, tbOptions *limiter.ExpirableOptions) *limiter.Limiter
 // LimitByKeys keeps track number of request made by keys separated by pipe.
 // It returns true when limit is exceeded.
 func LimitByKeys(lmt *limiter.Limiter, keys []string) bool {
-	if lmt.LimitReached(strings.Join(keys, "|")) {
-		return true
-	}
-
-	return false
+	return lmt.LimitReached(strings.Join(keys, "|"))
 }
 
 // BuildKeys generates a slice of keys to rate-limit by given limiter and request structs.
