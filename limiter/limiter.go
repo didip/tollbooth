@@ -51,6 +51,19 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 	return lmt
 }
 
+type LowLevelLimiter struct {
+	*rate.Limiter
+
+	// last time the request was blocked because it reached rate limit
+	LastBlock time.Time
+}
+
+func newLowLevelLimiter(max int64, burst int) *LowLevelLimiter {
+	return &LowLevelLimiter{
+		Limiter: rate.NewLimiter(rate.Limit(max), burst),
+	}
+}
+
 // Limiter is a config struct to limit a particular request handler.
 type Limiter struct {
 	// Maximum number of requests to limit per second.
@@ -440,7 +453,8 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 	return l
 }
 
-func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
+// returns (true, &prevBlockTime) if limit is reached, returns (false, nil) otherwise
+func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) (bool, *time.Time) {
 	lmtMax := l.GetMax()
 	lmtBurst := l.GetBurst()
 	l.Lock()
@@ -449,21 +463,30 @@ func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time
 	if _, found := l.tokenBuckets.Get(key); !found {
 		l.tokenBuckets.Set(
 			key,
-			rate.NewLimiter(rate.Limit(lmtMax), lmtBurst),
+			newLowLevelLimiter(lmtMax, lmtBurst),
 			tokenBucketTTL,
 		)
 	}
 
 	expiringMap, found := l.tokenBuckets.Get(key)
 	if !found {
-		return false
+		return false, nil
+	}
+	expiringLimiter := expiringMap.(*LowLevelLimiter)
+	exceeds := !expiringLimiter.Allow()
+
+	if exceeds {
+		prevBlockTime := expiringLimiter.LastBlock
+		expiringLimiter.LastBlock = time.Now()
+		return true, &prevBlockTime
 	}
 
-	return !expiringMap.(*rate.Limiter).Allow()
+	return false, nil
 }
 
 // LimitReached returns a bool indicating if the Bucket identified by key ran out of tokens.
-func (l *Limiter) LimitReached(key string) bool {
+// returns (true, &prevBlockTime) if limit is reached, returns (false, nil) otherwise
+func (l *Limiter) LimitReached(key string) (bool, *time.Time) {
 	ttl := l.GetTokenBucketExpirationTTL()
 
 	if ttl <= 0 {
