@@ -50,6 +50,29 @@ func TestLimitReached(t *testing.T) {
 	}
 }
 
+func TestFloatingLimitReached(t *testing.T) {
+	lmt := New(nil).SetMax(0.1).SetBurst(1)
+	key := "127.0.0.1|/"
+
+	if lmt.LimitReached(key) == true {
+		t.Error("First time count should not reached the limit.")
+	}
+
+	if lmt.LimitReached(key) == false {
+		t.Error("Second time count should return true because it exceeds 1 request per 10 seconds.")
+	}
+
+	<-time.After(7 * time.Second)
+	if lmt.LimitReached(key) == false {
+		t.Error("Third time count should return true because it exceeds 1 request per 10 seconds.")
+	}
+
+	<-time.After(3 * time.Second)
+	if lmt.LimitReached(key) == true {
+		t.Error("Fourth time count should not reached the limit because the 10 second window has passed.")
+	}
+}
+
 func TestLimitReachedWithCustomTokenBucketTTL(t *testing.T) {
 	lmt := New(&ExpirableOptions{DefaultExpirationTTL: time.Second, ExpireJobInterval: 0}).SetMax(1).SetBurst(1)
 	key := "127.0.0.1|/"
@@ -71,7 +94,7 @@ func TestLimitReachedWithCustomTokenBucketTTL(t *testing.T) {
 func TestMuchHigherMaxRequests(t *testing.T) {
 	numRequests := 1000
 	delay := (1 * time.Second) / time.Duration(numRequests)
-	lmt := New(nil).SetMax(int64(numRequests)).SetBurst(1)
+	lmt := New(nil).SetMax(float64(numRequests)).SetBurst(1)
 	key := "127.0.0.1|/"
 
 	for i := 0; i < numRequests; i++ {
@@ -90,7 +113,7 @@ func TestMuchHigherMaxRequests(t *testing.T) {
 func TestMuchHigherMaxRequestsWithCustomTokenBucketTTL(t *testing.T) {
 	numRequests := 1000
 	delay := (1 * time.Second) / time.Duration(numRequests)
-	lmt := New(&ExpirableOptions{DefaultExpirationTTL: time.Minute, ExpireJobInterval: time.Minute}).SetMax(int64(numRequests)).SetBurst(1)
+	lmt := New(&ExpirableOptions{DefaultExpirationTTL: time.Minute, ExpireJobInterval: time.Minute}).SetMax(float64(numRequests)).SetBurst(1)
 	key := "127.0.0.1|/"
 
 	for i := 0; i < numRequests; i++ {

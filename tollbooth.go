@@ -3,25 +3,26 @@ package tollbooth
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
+	"fmt"
 	"github.com/didip/tollbooth/errors"
 	"github.com/didip/tollbooth/libstring"
 	"github.com/didip/tollbooth/limiter"
+	"math"
 )
 
 // setResponseHeaders configures X-Rate-Limit-Limit and X-Rate-Limit-Duration
 func setResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("X-Rate-Limit-Limit", strconv.FormatInt(lmt.GetMax(), 10))
+	w.Header().Add("X-Rate-Limit-Limit", fmt.Sprintf("%.2f", lmt.GetMax()))
 	w.Header().Add("X-Rate-Limit-Duration", "1")
 	w.Header().Add("X-Rate-Limit-Request-Forwarded-For", r.Header.Get("X-Forwarded-For"))
 	w.Header().Add("X-Rate-Limit-Request-Remote-Addr", r.RemoteAddr)
 }
 
 // NewLimiter is a convenience function to limiter.New.
-func NewLimiter(max int64, tbOptions *limiter.ExpirableOptions) *limiter.Limiter {
-	return limiter.New(tbOptions).SetMax(max).SetBurst(int(max))
+func NewLimiter(max float64, tbOptions *limiter.ExpirableOptions) *limiter.Limiter {
+	return limiter.New(tbOptions).SetMax(max).SetBurst(int(math.Max(1, max)))
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.

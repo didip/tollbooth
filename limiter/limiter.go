@@ -54,7 +54,7 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 // Limiter is a config struct to limit a particular request handler.
 type Limiter struct {
 	// Maximum number of requests to limit per second.
-	max int64
+	max float64
 
 	// Limiter burst size
 	burst int
@@ -151,7 +151,7 @@ func (l *Limiter) GetHeaderEntryExpirationTTL() time.Duration {
 }
 
 // SetMax is thread-safe way of setting maximum number of requests to limit per duration.
-func (l *Limiter) SetMax(max int64) *Limiter {
+func (l *Limiter) SetMax(max float64) *Limiter {
 	l.Lock()
 	l.max = max
 	l.Unlock()
@@ -160,7 +160,7 @@ func (l *Limiter) SetMax(max int64) *Limiter {
 }
 
 // GetMax is thread-safe way of getting maximum number of requests to limit per duration.
-func (l *Limiter) GetMax() int64 {
+func (l *Limiter) GetMax() float64 {
 	l.RLock()
 	defer l.RUnlock()
 	return l.max
