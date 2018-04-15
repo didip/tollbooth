@@ -19,7 +19,7 @@ This is a generic middleware to rate-limit HTTP requests.
 **v3.x.x:** Apparently we have been using golang.org/x/time/rate incorrectly. See issue #48. It always limit X number per 1 second. The time duration is not changeable, so it does not make sense to pass TTL to tollbooth.
 
 
-## Five Minutes Tutorial
+## Five Minute Tutorial
 ```go
 package main
 
