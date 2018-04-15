@@ -7,9 +7,7 @@ This is a generic middleware to rate-limit HTTP requests.
 
 **NOTE 1:** This library is considered finished.
 
-**NOTE 2:** In the coming weeks, I will be removing thirdparty modules and moving them to their own dedicated repos.
-
-**NOTE 3:** Major version changes are backward-incompatible. `v2.0.0` streamlines the ugliness of the old API.
+**NOTE 2:** Major version changes are backward-incompatible. `v2.0.0` streamlines the ugliness of the old API.
 
 
 ## Versions
@@ -160,5 +158,7 @@ Sometimes, other frameworks require a little bit of shim to use Tollbooth. These
 ## My other Go libraries
 
 * [Stopwatch](https://github.com/didip/stopwatch): A small library to measure latency of things. Useful if you want to report latency data to Graphite.
+
+* [LaborUnion](https://github.com/didip/laborunion): A dynamic worker pool library.
 
 * [Gomet](https://github.com/didip/gomet): Simple HTTP client & server long poll library for Go. Useful for receiving live updates without needing Websocket.
