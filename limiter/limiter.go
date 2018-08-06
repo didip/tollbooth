@@ -440,6 +440,14 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 	return l
 }
 
+// RemoveTokenBucketKey is a thread-safe way of removing a key from a bucket.
+func (l *Limiter) RemoveTokenBucketKey(key string) {
+	l.Lock()
+	defer l.Unlock() // defer because possible edge-case panic
+
+	l.tokenBuckets.Delete(key)
+}
+
 // TokenBucketKeyExists is a thread-safe way of determining if a particular key exists in the bucket at that moment.
 // A positive result is subject to expiration or removal races, of course.
 func (l *Limiter) TokenBucketKeyExists(key string) bool {
