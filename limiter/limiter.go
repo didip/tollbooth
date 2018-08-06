@@ -440,6 +440,15 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 	return l
 }
 
+// TokenBucketKeyExists is a thread-safe way of determining if a particular key exists in the bucket at that moment.
+// A positive result is subject to expiration or removal races, of course.
+func (l *Limiter) TokenBucketKeyExists(key string) bool {
+	l.RLock()
+	_, found := l.tokenBuckets.Get(key)
+	l.RUnlock()
+	return found
+}
+
 func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
 	lmtMax := l.GetMax()
 	lmtBurst := l.GetBurst()
