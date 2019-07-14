@@ -56,3 +56,63 @@ Top:
 		t.Fatalf("We should never reached the limit, the counter should be 0. limitReachedCounter: %v", limitReachedCounter)
 	}
 }
+
+func issue66HeaderKey() string {
+	return "X-Customer-ID"
+}
+
+func issue66RateLimiter(h http.HandlerFunc) http.HandlerFunc {
+	allocationLimiter := NewLimiter(1, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Minute}).
+		SetMethods([]string{"POST"})
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		customerID := r.Header.Get(issue66HeaderKey())
+		allocationLimiter.SetHeader(issue66HeaderKey(), []string{customerID})
+
+		LimitFuncHandler(allocationLimiter, h).ServeHTTP(w, r)
+	}
+
+	return handler
+}
+
+// See: https://github.com/didip/tollbooth/issues/66
+func Test_Issue66_CustomRateLimitByHeaderValues(t *testing.T) {
+	customerID1 := "1234"
+	customerID2 := "5678"
+
+	tests := []struct {
+		name                string
+		secondRequestStatus int
+		customerIDs         []string
+	}{
+		{"different customer id", http.StatusOK, []string{customerID1, customerID2}},
+		{"same customer id", http.StatusTooManyRequests, []string{customerID1, customerID1}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+
+			testServer := httptest.NewServer(issue66RateLimiter(h))
+			defer testServer.Close()
+
+			request1, _ := http.NewRequest("POST", testServer.URL, nil)
+			request1.Header.Add(issue66HeaderKey(), tt.customerIDs[0])
+
+			client := &http.Client{}
+
+			response, _ := client.Do(request1)
+			if response.StatusCode != http.StatusOK {
+				t.Errorf("Unexpected status code. Got: %v, expected: %v", response.StatusCode, http.StatusOK)
+			}
+
+			request2, _ := http.NewRequest("POST", testServer.URL, nil)
+			request2.Header.Add(issue66HeaderKey(), tt.customerIDs[1])
+
+			response, _ = client.Do(request2)
+			if response.StatusCode != tt.secondRequestStatus {
+				t.Errorf("Unexpected status code. Got: %v, expected: %v. Customers: %v", response.StatusCode, tt.secondRequestStatus, tt.customerIDs)
+			}
+		})
+	}
+}
