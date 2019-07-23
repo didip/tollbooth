@@ -59,10 +59,10 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 		if libstring.StringInSlice(lmtMethods, r.Method) {
 			for headerKey, headerValues := range lmtHeaders {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
-					// If header values are empty, rate-limit all request with headerKey.
+					// If header values are empty, rate-limit all request containing headerKey.
 					username, _, ok := r.BasicAuth()
 					if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
-						sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, username})
+						sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, r.Header.Get(headerKey), username})
 					}
 
 				} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
@@ -71,7 +71,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 						if r.Header.Get(headerKey) == headerValue {
 							username, _, ok := r.BasicAuth()
 							if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
-								sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, headerValue})
+								sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, headerValue, username})
 							}
 							break
 						}
@@ -86,7 +86,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 			for headerKey, headerValues := range lmtHeaders {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 					// If header values are empty, rate-limit all request with headerKey.
-					sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey})
+					sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, r.Header.Get(headerKey)})
 
 				} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
 					// We are only limiting if request's header value is defined inside `headerValues`.
@@ -120,7 +120,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 		for headerKey, headerValues := range lmtHeaders {
 			if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 				// If header values are empty, rate-limit all request with headerKey.
-				sliceKeys = append(sliceKeys, []string{remoteIP, path, headerKey})
+				sliceKeys = append(sliceKeys, []string{remoteIP, path, headerKey, r.Header.Get(headerKey)})
 
 			} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
 				// If header values are not empty, rate-limit all request with headerKey and headerValues.
