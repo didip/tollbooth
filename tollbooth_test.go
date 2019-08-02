@@ -116,7 +116,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 				t.Errorf("The (%v) chunk should be request header. KeyChunk: %v", i+1, keyChunk)
 			}
 			if i == 3 && (keyChunk != "totally-top-secret" && keyChunk != "another-secret") {
-				t.Errorf("The (%v) chunk should be request path. KeyChunk: %v", i+1, keyChunk)
+				t.Errorf("The (%v) chunk should be request header value. KeyChunk: %v", i+1, keyChunk)
 			}
 		}
 	}
