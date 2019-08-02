@@ -155,7 +155,7 @@ func (l *Limiter) GetHeaderEntryExpirationTTL() time.Duration {
 }
 
 // SetHeaderEntryExpirationTTL is thread-safe way of setting custom basic auth expiration TTL.
-func (l *Limiter) SetContextEntryEntryExpirationTTL(ttl time.Duration) *Limiter {
+func (l *Limiter) SetContextEntryExpirationTTL(ttl time.Duration) *Limiter {
 	l.Lock()
 	l.contextEntryExpirationTTL = ttl
 	l.Unlock()
