@@ -92,12 +92,16 @@ type Limiter struct {
 	// Empty means skip headers checking.
 	headers map[string]*gocache.Cache
 
+	// Map of Context values to limit.
+	contextValues map[string]*gocache.Cache
+
 	// Map of limiters with TTL
 	tokenBuckets *gocache.Cache
 
-	tokenBucketExpirationTTL time.Duration
-	basicAuthExpirationTTL   time.Duration
-	headerEntryExpirationTTL time.Duration
+	tokenBucketExpirationTTL 	time.Duration
+	basicAuthExpirationTTL   	time.Duration
+	headerEntryExpirationTTL 	time.Duration
+	contextEntryExpirationTTL 	time.Duration
 
 	sync.RWMutex
 }
@@ -148,6 +152,22 @@ func (l *Limiter) GetHeaderEntryExpirationTTL() time.Duration {
 	l.RLock()
 	defer l.RUnlock()
 	return l.headerEntryExpirationTTL
+}
+
+// SetHeaderEntryExpirationTTL is thread-safe way of setting custom basic auth expiration TTL.
+func (l *Limiter) SetContextEntryEntryExpirationTTL(ttl time.Duration) *Limiter {
+	l.Lock()
+	l.contextEntryExpirationTTL = ttl
+	l.Unlock()
+
+	return l
+}
+
+// GetHeaderEntryExpirationTTL is thread-safe way of getting custom basic auth expiration TTL.
+func (l *Limiter) GetContextEntryExpirationTTL() time.Duration {
+	l.RLock()
+	defer l.RUnlock()
+	return l.contextEntryExpirationTTL
 }
 
 // SetMax is thread-safe way of setting maximum number of requests to limit per duration.
