@@ -54,94 +54,37 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 	lmtHeadersIsSet := len(lmtHeaders) > 0
 	lmtBasicAuthUsersIsSet := len(lmtBasicAuthUsers) > 0
 
-	if lmtMethods != nil && lmtHeadersIsSet && lmtBasicAuthUsersIsSet {
-		// Limit by HTTP methods and HTTP headers+values and Basic Auth credentials.
-		if libstring.StringInSlice(lmtMethods, r.Method) {
-			for headerKey, headerValues := range lmtHeaders {
-				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
-					// If header values are empty, rate-limit all request containing headerKey.
-					username, _, ok := r.BasicAuth()
-					if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
-						sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, r.Header.Get(headerKey), username})
-					}
+	method := ""
+	if lmtMethods != nil && libstring.StringInSlice(lmtMethods, r.Method) {
+		method = r.Method
+	}
 
-				} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
-					// If header values are not empty, rate-limit all request with headerKey and headerValues.
-					for _, headerValue := range headerValues {
-						if r.Header.Get(headerKey) == headerValue {
-							username, _, ok := r.BasicAuth()
-							if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
-								sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, headerValue, username})
-							}
-							break
-						}
-					}
-				}
-			}
+	usernameToLimit := ""
+	if lmtBasicAuthUsersIsSet {
+		username, _, ok := r.BasicAuth()
+		if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
+			usernameToLimit = username
 		}
+	}
 
-	} else if lmtMethods != nil && lmtHeadersIsSet {
-		// Limit by HTTP methods and HTTP headers+values.
-		if libstring.StringInSlice(lmtMethods, r.Method) {
-			for headerKey, headerValues := range lmtHeaders {
-				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
-					// If header values are empty, rate-limit all request with headerKey.
-					sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, r.Header.Get(headerKey)})
-
-				} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
-					// We are only limiting if request's header value is defined inside `headerValues`.
-					for _, headerValue := range headerValues {
-						if r.Header.Get(headerKey) == headerValue {
-							sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, headerKey, headerValue})
-							break
-						}
-					}
-				}
-			}
-		}
-
-	} else if lmtMethods != nil && lmtBasicAuthUsersIsSet {
-		// Limit by HTTP methods and Basic Auth credentials.
-		if libstring.StringInSlice(lmtMethods, r.Method) {
-			username, _, ok := r.BasicAuth()
-			if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
-				sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method, username})
-			}
-		}
-
-	} else if lmtMethods != nil {
-		// Limit by HTTP methods.
-		if libstring.StringInSlice(lmtMethods, r.Method) {
-			sliceKeys = append(sliceKeys, []string{remoteIP, path, r.Method})
-		}
-
-	} else if lmtHeadersIsSet {
-		// Limit by HTTP headers+values.
+	if lmtHeadersIsSet {
 		for headerKey, headerValues := range lmtHeaders {
 			if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
-				// If header values are empty, rate-limit all request with headerKey.
-				sliceKeys = append(sliceKeys, []string{remoteIP, path, headerKey, r.Header.Get(headerKey)})
+				// If header values are empty, rate-limit all request containing headerKey.
+				sliceKeys = append(sliceKeys, []string{remoteIP, path, method, headerKey, r.Header.Get(headerKey), usernameToLimit})
 
 			} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
 				// If header values are not empty, rate-limit all request with headerKey and headerValues.
 				for _, headerValue := range headerValues {
 					if r.Header.Get(headerKey) == headerValue {
-						sliceKeys = append(sliceKeys, []string{remoteIP, path, headerKey, headerValue})
+						sliceKeys = append(sliceKeys, []string{remoteIP, path, method, headerKey, headerValue, usernameToLimit})
 						break
 					}
 				}
 			}
 		}
-
-	} else if lmtBasicAuthUsersIsSet {
-		// Limit by Basic Auth credentials.
-		username, _, ok := r.BasicAuth()
-		if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
-			sliceKeys = append(sliceKeys, []string{remoteIP, path, username})
-		}
 	} else {
-		// Default: Limit by remoteIP and path.
-		sliceKeys = append(sliceKeys, []string{remoteIP, path})
+		sliceKeys = append(sliceKeys, []string{remoteIP, path, method, "", "", usernameToLimit})
 	}
 
 	return sliceKeys
