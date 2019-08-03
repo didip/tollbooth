@@ -1,0 +1,6 @@
+github.com/patrickmn/go-cache v0.0.0-20170418232947-7ac151875ffb h1:TytdvXWFYkdCn7KS+eNlZULXgc3J9nWzLR/233gWwBw=
+github.com/patrickmn/go-cache v0.0.0-20170418232947-7ac151875ffb/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
+golang.org/x/net v0.0.0-20161007143504-f4b625ec9b21 h1:oOvUY3V+5DQQG3Bgf/tgq5syFCPvlosk3Hm5JFKmDGg=
+golang.org/x/net v0.0.0-20161007143504-f4b625ec9b21/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
+golang.org/x/time v0.0.0-20160926182426-711ca1cb8763 h1:ryh+9pccLWKRcDnumRJGpcEl5IuQKPM5WgAItYcz09Q=
+golang.org/x/time v0.0.0-20160926182426-711ca1cb8763/go.mod h1:tRJNPiyCQ0inRvYxbN9jk5I+vvW/OXSQhTDSoE431IQ=
