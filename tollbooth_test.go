@@ -125,6 +125,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 func TestRequestMethodBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
 	lmt.SetMethods([]string{"GET"})
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
@@ -133,7 +134,13 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 
-	for _, keys := range BuildKeys(lmt, request) {
+	allKeys := BuildKeys(lmt, request)
+
+	if len(allKeys) != 1 {
+		t.Errorf("There should be exactly one key. AllKeys: %v", allKeys)
+	}
+
+	for _, keys := range allKeys {
 		if len(keys) != 3 {
 			t.Errorf("Keys should be made of 3 parts. Keys: %v", keys)
 		}

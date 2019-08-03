@@ -460,6 +460,32 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 	return l
 }
 
+// SetContextValue is thread-safe way of setting entries of 1 Context value.
+func (l *Limiter) SetContextValue(contextValue string, entries []string) *Limiter {
+	l.RLock()
+	existing, found := l.contextValues[contextValue]
+	l.RUnlock()
+
+	ttl := l.GetContextEntryExpirationTTL()
+	if ttl <= 0 {
+		ttl = l.generalExpirableOptions.DefaultExpirationTTL
+	}
+
+	if !found {
+		existing = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
+	}
+
+	for _, entry := range entries {
+		existing.Set(entry, true, ttl)
+	}
+
+	l.Lock()
+	l.contextValues[contextValue] = existing
+	l.Unlock()
+
+	return l
+}
+
 func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
 	lmtMax := l.GetMax()
 	lmtBurst := l.GetBurst()
