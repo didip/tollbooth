@@ -60,6 +60,7 @@ func TestDefaultBuildKeys(t *testing.T) {
 
 func TestBasicAuthBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetBasicAuthUsers([]string{"bro"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -96,6 +97,7 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 
 func TestCustomHeadersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -134,6 +136,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 
 func TestRequestMethodBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetMethods([]string{"GET"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -168,6 +171,7 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 
 func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetMethods([]string{"GET"})
 	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 
@@ -210,6 +214,7 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 
 func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetMethods([]string{"GET"})
 	lmt.SetBasicAuthUsers([]string{"bro"})
 
@@ -249,6 +254,7 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 
 func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetMethods([]string{"GET"})
 	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 	lmt.SetBasicAuthUsers([]string{"bro"})
