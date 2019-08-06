@@ -460,6 +460,26 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 	return l
 }
 
+// GetContextValues is thread-safe way of getting a map of Context values to limit.
+func (l *Limiter) GetContextValues() map[string][]string {
+	results := make(map[string][]string)
+
+	l.RLock()
+	defer l.RUnlock()
+
+	for contextValue, entriesAsGoCache := range l.contextValues {
+		entries := make([]string, 0)
+
+		for entry, _ := range entriesAsGoCache.Items() {
+			entries = append(entries, entry)
+		}
+
+		results[contextValue] = entries
+	}
+
+	return results
+}
+
 // SetContextValue is thread-safe way of setting entries of 1 Context value.
 func (l *Limiter) SetContextValue(contextValue string, entries []string) *Limiter {
 	l.RLock()
