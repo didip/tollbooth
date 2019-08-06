@@ -89,8 +89,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 				}
 			}
 		}
-	}
-	if len(headerValuesToLimit) <= 0 {
+	} else {
 		headerValuesToLimit = append(headerValuesToLimit, []string{"", ""})
 	}
 
