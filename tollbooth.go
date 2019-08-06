@@ -49,9 +49,11 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 
 	lmtMethods := lmt.GetMethods()
 	lmtHeaders := lmt.GetHeaders()
+	lmtContextValues := lmt.GetContextValues()
 	lmtBasicAuthUsers := lmt.GetBasicAuthUsers()
 
 	lmtHeadersIsSet := len(lmtHeaders) > 0
+	lmtContextValuesIsSet := len(lmtContextValues) > 0
 	lmtBasicAuthUsersIsSet := len(lmtBasicAuthUsers) > 0
 
 	method := ""
@@ -79,7 +81,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 				// If header values are empty, rate-limit all request containing headerKey.
 				headerValuesToLimit = append(headerValuesToLimit, []string{headerKey, reqHeaderValue})
 
-			} else if len(headerValues) > 0 {
+			} else {
 				// If header values are not empty, rate-limit all request with headerKey and headerValues.
 				for _, headerValue := range headerValues {
 					if r.Header.Get(headerKey) == headerValue {
@@ -93,8 +95,36 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 		headerValuesToLimit = append(headerValuesToLimit, []string{"", ""})
 	}
 
+	contextValuesToLimit := [][]string{}
+	if lmtContextValuesIsSet {
+		for contextKey, contextValues := range lmtContextValues {
+			reqContextValue := fmt.Sprintf("%v", r.Context().Value(contextKey))
+			if reqContextValue == "" {
+				continue
+			}
+
+			if contextValues == nil || len(contextValues) <= 0 {
+				// If header values are empty, rate-limit all request containing headerKey.
+				contextValuesToLimit = append(contextValuesToLimit, []string{contextKey, reqContextValue})
+
+			} else {
+				// If header values are not empty, rate-limit all request with headerKey and headerValues.
+				for _, contextValue := range contextValues {
+					if reqContextValue == contextValue {
+						contextValuesToLimit = append(contextValuesToLimit, []string{contextKey, contextValue})
+						break
+					}
+				}
+			}
+		}
+	} else {
+		contextValuesToLimit = append(contextValuesToLimit, []string{"", ""})
+	}
+
 	for _, header := range headerValuesToLimit {
-		sliceKeys = append(sliceKeys, []string{remoteIP, path, method, header[0], header[1], usernameToLimit})
+		for _, contextValue := range contextValuesToLimit {
+			sliceKeys = append(sliceKeys, []string{remoteIP, path, method, header[0], header[1], contextValue[0], contextValue[1], usernameToLimit})
+		}
 	}
 	
 	return sliceKeys

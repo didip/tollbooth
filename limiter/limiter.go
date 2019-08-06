@@ -20,7 +20,8 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 		SetOnLimitReached(nil).
 		SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
 		SetForwardedForIndexFromBehind(0).
-		SetHeaders(make(map[string][]string))
+		SetHeaders(make(map[string][]string)).
+		SetContextValues(make(map[string][]string))
 
 	if generalExpirableOptions != nil {
 		lmt.generalExpirableOptions = generalExpirableOptions
@@ -455,6 +456,19 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 
 	for _, toBeRemoved := range entriesForRemoval {
 		entries.Delete(toBeRemoved)
+	}
+
+	return l
+}
+
+// SetContextValues is thread-safe way of setting map of HTTP headers to limit.
+func (l *Limiter) SetContextValues(contextValues map[string][]string) *Limiter {
+	if l.contextValues == nil {
+		l.contextValues = make(map[string]*gocache.Cache)
+	}
+
+	for contextValue, entries := range contextValues {
+		l.SetContextValue(contextValue, entries)
 	}
 
 	return l

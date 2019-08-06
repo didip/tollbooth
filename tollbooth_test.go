@@ -1,6 +1,7 @@
 package tollbooth
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -169,6 +170,45 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 	}
 }
 
+func TestContextValueBuildKeys(t *testing.T) {
+	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
+	lmt.SetContextValue("API-access-level", []string{"basic"})
+
+	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
+	if err != nil {
+		t.Errorf("Unable to create new HTTP request. Error: %v", err)
+	}
+
+	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	request = request.WithContext(context.WithValue(request.Context(), "API-access-level", "basic"))
+
+	sliceKeys := BuildKeys(lmt, request)
+	if len(sliceKeys) == 0 {
+		t.Fatal("Length of sliceKeys should never be empty.")
+	}
+
+	for _, keys := range sliceKeys {
+		if len(keys) != 8 {
+			t.Errorf("Keys should be made of 8 parts. Keys: %v", keys)
+		}
+		for i, keyChunk := range keys {
+			if i == 0 && keyChunk != request.Header.Get("X-Real-IP") {
+				t.Errorf("The (%v) chunk should be remote IP. KeyChunk: %v", i+1, keyChunk)
+			}
+			if i == 1 && keyChunk != request.URL.Path {
+				t.Errorf("The (%v) chunk should be request path. KeyChunk: %v", i+1, keyChunk)
+			}
+			if i == 5 && keyChunk != "API-access-level" {
+				t.Errorf("The (%v) chunk should be context key. KeyChunk: %v", i+1, keyChunk)
+			}
+			if i == 6 && keyChunk != "basic" {
+				t.Errorf("The (%v) chunk should be context value. KeyChunk: %v", i+1, keyChunk)
+			}
+		}
+	}
+}
+
 func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
 	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
@@ -298,7 +338,6 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 func TestLimitHandler(t *testing.T) {
