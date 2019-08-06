@@ -78,8 +78,8 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 	}
 
 	for _, keys := range BuildKeys(lmt, request) {
-		if len(keys) != 3 {
-			t.Error("Keys should be made of 3 parts.")
+		if len(keys) != 6 {
+			t.Error("Keys should be made of 6 parts.")
 		}
 		for i, keyChunk := range keys {
 			if i == 0 && keyChunk != request.Header.Get("X-Real-IP") {
@@ -88,7 +88,7 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 			if i == 1 && keyChunk != request.URL.Path {
 				t.Errorf("The (%v) chunk should be request path. KeyChunk: %v", i+1, keyChunk)
 			}
-			if i == 2 && keyChunk != "bro" {
+			if i == 5 && keyChunk != "bro" {
 				t.Errorf("The (%v) chunk should be request username. KeyChunk: %v", i+1, keyChunk)
 			}
 		}
@@ -114,8 +114,8 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 	}
 
 	for _, keys := range sliceKeys {
-		if len(keys) != 4 {
-			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
+		if len(keys) != 6 {
+			t.Errorf("Keys should be made of 6 parts. Keys: %v", keys)
 		}
 		for i, keyChunk := range keys {
 			if i == 0 && keyChunk != request.Header.Get("X-Real-IP") {
@@ -124,10 +124,10 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 			if i == 1 && keyChunk != request.URL.Path {
 				t.Errorf("The (%v) chunk should be request path. KeyChunk: %v", i+1, keyChunk)
 			}
-			if i == 2 && keyChunk != "X-Auth-Token" {
+			if i == 3 && keyChunk != "X-Auth-Token" {
 				t.Errorf("The (%v) chunk should be request header. KeyChunk: %v", i+1, keyChunk)
 			}
-			if i == 3 && (keyChunk != "totally-top-secret" && keyChunk != "another-secret") {
+			if i == 4 && (keyChunk != "totally-top-secret" && keyChunk != "another-secret") {
 				t.Errorf("The (%v) chunk should be request header value. KeyChunk: %v", i+1, keyChunk)
 			}
 		}
@@ -152,8 +152,8 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 	}
 
 	for _, keys := range sliceKeys {
-		if len(keys) != 3 {
-			t.Errorf("Keys should be made of 3 parts. Keys: %v", keys)
+		if len(keys) != 6 {
+			t.Errorf("Keys should be made of 6 parts. Keys: %v", keys)
 		}
 		for i, keyChunk := range keys {
 			if i == 0 && keyChunk != request.Header.Get("X-Real-IP") {
@@ -189,8 +189,8 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 	}
 
 	for _, keys := range sliceKeys {
-		if len(keys) != 5 {
-			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
+		if len(keys) != 6 {
+			t.Errorf("Keys should be made of 6 parts. Keys: %v", keys)
 		}
 		for i, keyChunk := range keys {
 			if i == 0 && keyChunk != request.Header.Get("X-Real-IP") {
@@ -232,8 +232,8 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 	}
 
 	for _, keys := range sliceKeys {
-		if len(keys) != 4 {
-			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
+		if len(keys) != 6 {
+			t.Errorf("Keys should be made of 6 parts. Keys: %v", keys)
 		}
 		for i, keyChunk := range keys {
 			if i == 0 && keyChunk != request.Header.Get("X-Real-IP") {
@@ -245,7 +245,7 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 			if i == 2 && keyChunk != "GET" {
 				t.Errorf("The (%v) chunk should be request method. KeyChunk: %v", i+1, keyChunk)
 			}
-			if i == 3 && keyChunk != "bro" {
+			if i == 5 && keyChunk != "bro" {
 				t.Errorf("The (%v) chunk should be basic auth user. KeyChunk: %v", i+1, keyChunk)
 			}
 		}
