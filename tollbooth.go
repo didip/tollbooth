@@ -67,26 +67,37 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 		}
 	}
 
+	headerValuesToLimit := [][]string{}
 	if lmtHeadersIsSet {
 		for headerKey, headerValues := range lmtHeaders {
-			if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
-				// If header values are empty, rate-limit all request containing headerKey.
-				sliceKeys = append(sliceKeys, []string{remoteIP, path, method, headerKey, r.Header.Get(headerKey), usernameToLimit})
+			reqHeaderValue := r.Header.Get(headerKey)
+			if reqHeaderValue == "" {
+				continue
+			}
 
-			} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
+			if headerValues == nil || len(headerValues) <= 0 {
+				// If header values are empty, rate-limit all request containing headerKey.
+				headerValuesToLimit = append(headerValuesToLimit, []string{headerKey, reqHeaderValue})
+
+			} else if len(headerValues) > 0 {
 				// If header values are not empty, rate-limit all request with headerKey and headerValues.
 				for _, headerValue := range headerValues {
 					if r.Header.Get(headerKey) == headerValue {
-						sliceKeys = append(sliceKeys, []string{remoteIP, path, method, headerKey, headerValue, usernameToLimit})
+						headerValuesToLimit = append(headerValuesToLimit, []string{headerKey, headerValue})
 						break
 					}
 				}
 			}
 		}
-	} else {
-		sliceKeys = append(sliceKeys, []string{remoteIP, path, method, "", "", usernameToLimit})
+	}
+	if len(headerValuesToLimit) <= 0 {
+		headerValuesToLimit = append(headerValuesToLimit, []string{"", ""})
 	}
 
+	for _, header := range headerValuesToLimit {
+		sliceKeys = append(sliceKeys, []string{remoteIP, path, method, header[0], header[1], usernameToLimit})
+	}
+	
 	return sliceKeys
 }
 
