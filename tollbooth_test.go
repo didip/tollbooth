@@ -306,6 +306,45 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 	}
 }
 
+func TestRequestMethodCustomHeadersAndBasicAuthUsersAndContextValuesBuildKeys(t *testing.T) {
+	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
+	lmt.SetMethods([]string{"GET"})
+	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
+	lmt.SetContextValue("API-access-level", []string{"basic"})
+	lmt.SetBasicAuthUsers([]string{"bro"})
+
+	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
+	if err != nil {
+		t.Errorf("Unable to create new HTTP request. Error: %v", err)
+	}
+
+	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	request.Header.Set("X-Auth-Token", "totally-top-secret")
+	request.SetBasicAuth("bro", "tato")
+	request = request.WithContext(context.WithValue(request.Context(), "API-access-level", "basic"))
+
+	sliceKeys := BuildKeys(lmt, request)
+	if len(sliceKeys) == 0 {
+		t.Fatal("Length of sliceKeys should never be empty.")
+	}
+
+	for _, keys := range sliceKeys {
+		expectedKeys := [][]string{
+			{request.Header.Get("X-Real-IP")},
+			{request.URL.Path},
+			{"GET"},
+			{"X-Auth-Token"},
+			{"totally-top-secret", "another-secret"},
+			{"API-access-level"},
+			{"basic"},
+			{"bro"},
+		}
+
+		checkKeys(t, keys,expectedKeys )
+	}
+}
+
 func TestLimitHandler(t *testing.T) {
 	lmt := limiter.New(nil).SetMax(1).SetBurst(1)
 	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
