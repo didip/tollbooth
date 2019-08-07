@@ -189,22 +189,26 @@ func TestContextValueBuildKeys(t *testing.T) {
 	}
 
 	for _, keys := range sliceKeys {
-		if len(keys) != 8 {
-			t.Errorf("Keys should be made of 8 parts. Keys: %v", keys)
+		checkKeys(keys, t, request)
+	}
+}
+
+func checkKeys(keys []string, t *testing.T, request *http.Request) {
+	if len(keys) != 8 {
+		t.Errorf("Keys should be made of 8 parts. Keys: %v", keys)
+	}
+	for i, keyChunk := range keys {
+		if i == 0 && keyChunk != request.Header.Get("X-Real-IP") {
+			t.Errorf("The (%v) chunk should be remote IP. KeyChunk: %v", i+1, keyChunk)
 		}
-		for i, keyChunk := range keys {
-			if i == 0 && keyChunk != request.Header.Get("X-Real-IP") {
-				t.Errorf("The (%v) chunk should be remote IP. KeyChunk: %v", i+1, keyChunk)
-			}
-			if i == 1 && keyChunk != request.URL.Path {
-				t.Errorf("The (%v) chunk should be request path. KeyChunk: %v", i+1, keyChunk)
-			}
-			if i == 5 && keyChunk != "API-access-level" {
-				t.Errorf("The (%v) chunk should be context key. KeyChunk: %v", i+1, keyChunk)
-			}
-			if i == 6 && keyChunk != "basic" {
-				t.Errorf("The (%v) chunk should be context value. KeyChunk: %v", i+1, keyChunk)
-			}
+		if i == 1 && keyChunk != request.URL.Path {
+			t.Errorf("The (%v) chunk should be request path. KeyChunk: %v", i+1, keyChunk)
+		}
+		if i == 5 && keyChunk != "API-access-level" {
+			t.Errorf("The (%v) chunk should be context key. KeyChunk: %v", i+1, keyChunk)
+		}
+		if i == 6 && keyChunk != "basic" {
+			t.Errorf("The (%v) chunk should be context value. KeyChunk: %v", i+1, keyChunk)
 		}
 	}
 }

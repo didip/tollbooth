@@ -155,8 +155,8 @@ func (l *Limiter) GetHeaderEntryExpirationTTL() time.Duration {
 	return l.headerEntryExpirationTTL
 }
 
-// SetHeaderEntryExpirationTTL is thread-safe way of setting custom basic auth expiration TTL.
-func (l *Limiter) SetContextEntryExpirationTTL(ttl time.Duration) *Limiter {
+// SetContextValueEntryExpirationTTL is thread-safe way of setting custom Context value expiration TTL.
+func (l *Limiter) SetContextValueEntryExpirationTTL(ttl time.Duration) *Limiter {
 	l.Lock()
 	l.contextEntryExpirationTTL = ttl
 	l.Unlock()
@@ -164,8 +164,8 @@ func (l *Limiter) SetContextEntryExpirationTTL(ttl time.Duration) *Limiter {
 	return l
 }
 
-// GetHeaderEntryExpirationTTL is thread-safe way of getting custom basic auth expiration TTL.
-func (l *Limiter) GetContextEntryExpirationTTL() time.Duration {
+// GetContextValueEntryExpirationTTL is thread-safe way of getting custom Cpntext value expiration TTL.
+func (l *Limiter) GetContextValueEntryExpirationTTL() time.Duration {
 	l.RLock()
 	defer l.RUnlock()
 	return l.contextEntryExpirationTTL
@@ -515,6 +515,36 @@ func (l *Limiter) SetContextValue(contextValue string, entries []string) *Limite
 
 	l.Lock()
 	l.contextValues[contextValue] = existing
+	l.Unlock()
+
+	return l
+}
+
+// GetContextValue is thread-safe way of getting 1 Context value entry.
+func (l *Limiter) GetContextValue(contextValue string) []string {
+	l.RLock()
+	entriesAsGoCache := l.contextValues[contextValue]
+	l.RUnlock()
+
+	entriesAsMap := entriesAsGoCache.Items()
+	entries := make([]string, 0)
+
+	for entry, _ := range entriesAsMap {
+		entries = append(entries, entry)
+	}
+
+	return entries
+}
+
+// RemoveContextValue is thread-safe way of removing entries of 1 Context value.
+func (l *Limiter) RemoveContextValue(contextValue string) *Limiter {
+	ttl := l.GetContextValueEntryExpirationTTL()
+	if ttl <= 0 {
+		ttl = l.generalExpirableOptions.DefaultExpirationTTL
+	}
+
+	l.Lock()
+	l.contextValues[contextValue] = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
 	l.Unlock()
 
 	return l
