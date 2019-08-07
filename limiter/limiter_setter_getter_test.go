@@ -153,3 +153,51 @@ func TestSetGetHeaders(t *testing.T) {
 		t.Errorf("Headers field is incorrect. Value: %v", entries)
 	}
 }
+
+func TestSetGetContextValues(t *testing.T) {
+	lmt := New(nil).SetMax(1)
+
+	// Check default
+	if len(lmt.GetContextValues()) != 0 {
+		t.Errorf("ContextValues field is incorrect. Value: %v", lmt.GetContextValues())
+	}
+
+	contextValues := make(map[string][]string)
+	contextValues["foo"] = []string{"bar"}
+
+	if lmt.SetContextValues(contextValues).GetContextValues()["foo"][0] != "bar" {
+		t.Errorf("ContextValues field is incorrect. Value: %v", lmt.GetContextValues())
+	}
+
+	// Set a new contextValue
+	lmt.SetContextValue("dragons", []string{"drogon", "rhaegal", "viserion"})
+	contextValue := lmt.GetContextValue("dragons")
+
+	if len(contextValue) != 3 {
+		t.Errorf("ContextValues field is incorrect. Value: %v", contextValue)
+	}
+
+	// Remove dragons contextValue
+	lmt.RemoveContextValue("dragons")
+	dragons := lmt.GetContextValue("dragons")
+
+	if len(dragons) != 0 {
+		t.Errorf("ContextValues field is incorrect. Value: %v", dragons)
+	}
+
+	// Adding another entries to an existing contextValue
+	lmt.SetContextValue("foo", []string{"baz"})
+	entries := lmt.GetContextValue("foo")
+
+	if len(entries) != 2 {
+		t.Errorf("ContextValues field is incorrect. Value: %v", entries)
+	}
+
+	// Remove an entry
+	lmt.RemoveContextValuesEntries("foo", []string{"bar"})
+	entries = lmt.GetContextValue("foo")
+
+	if len(entries) != 1 || entries[0] != "baz" {
+		t.Errorf("ContextValues field is incorrect. Value: %v", entries)
+	}
+}

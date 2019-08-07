@@ -444,7 +444,7 @@ func (l *Limiter) RemoveHeader(header string) *Limiter {
 	return l
 }
 
-// RemoveHeaderEntries is thread-safe way of adding new entries to 1 HTTP header rule.
+// RemoveHeaderEntries is thread-safe way of removing new entries to 1 HTTP header rule.
 func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string) *Limiter {
 	l.RLock()
 	entries, found := l.headers[header]
@@ -500,7 +500,7 @@ func (l *Limiter) SetContextValue(contextValue string, entries []string) *Limite
 	existing, found := l.contextValues[contextValue]
 	l.RUnlock()
 
-	ttl := l.GetContextEntryExpirationTTL()
+	ttl := l.GetContextValueEntryExpirationTTL()
 	if ttl <= 0 {
 		ttl = l.generalExpirableOptions.DefaultExpirationTTL
 	}
@@ -546,6 +546,23 @@ func (l *Limiter) RemoveContextValue(contextValue string) *Limiter {
 	l.Lock()
 	l.contextValues[contextValue] = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
 	l.Unlock()
+
+	return l
+}
+
+// RemoveContextValuesEntries is thread-safe way of removing entries to a ContextValue.
+func (l *Limiter) RemoveContextValuesEntries(contextValue string, entriesForRemoval []string) *Limiter {
+	l.RLock()
+	entries, found := l.contextValues[contextValue]
+	l.RUnlock()
+
+	if !found {
+		return l
+	}
+
+	for _, toBeRemoved := range entriesForRemoval {
+		entries.Delete(toBeRemoved)
+	}
 
 	return l
 }
