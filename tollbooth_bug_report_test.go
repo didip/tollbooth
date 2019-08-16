@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/didip/tollbooth/limiter"
+	"github.com/didip/tollbooth/v5/limiter"
 )
 
 // See: https://github.com/didip/tollbooth/issues/48
