@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/didip/tollbooth/errors"
-	"github.com/didip/tollbooth/libstring"
-	"github.com/didip/tollbooth/limiter"
+	"github.com/didip/tollbooth/v5/errors"
+	"github.com/didip/tollbooth/v5/libstring"
+	"github.com/didip/tollbooth/v5/limiter"
 )
 
 // setResponseHeaders configures X-Rate-Limit-Limit and X-Rate-Limit-Duration
