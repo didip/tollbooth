@@ -60,6 +60,7 @@ func TestDefaultBuildKeys(t *testing.T) {
 
 func TestBasicAuthBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetBasicAuthUsers([]string{"bro"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -70,6 +71,11 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 
 	request.SetBasicAuth("bro", "tato")
+
+	sliceKeys := BuildKeys(lmt, request)
+	if len(sliceKeys) == 0 {
+		t.Fatal("Length of sliceKeys should never be empty.")
+	}
 
 	for _, keys := range BuildKeys(lmt, request) {
 		if len(keys) != 3 {
@@ -91,6 +97,7 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 
 func TestCustomHeadersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -101,7 +108,12 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 
-	for _, keys := range BuildKeys(lmt, request) {
+	sliceKeys := BuildKeys(lmt, request)
+	if len(sliceKeys) == 0 {
+		t.Fatal("Length of sliceKeys should never be empty.")
+	}
+
+	for _, keys := range sliceKeys {
 		if len(keys) != 4 {
 			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
 		}
@@ -116,7 +128,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 				t.Errorf("The (%v) chunk should be request header. KeyChunk: %v", i+1, keyChunk)
 			}
 			if i == 3 && (keyChunk != "totally-top-secret" && keyChunk != "another-secret") {
-				t.Errorf("The (%v) chunk should be request path. KeyChunk: %v", i+1, keyChunk)
+				t.Errorf("The (%v) chunk should be request header value. KeyChunk: %v", i+1, keyChunk)
 			}
 		}
 	}
@@ -124,6 +136,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 
 func TestRequestMethodBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetMethods([]string{"GET"})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -133,7 +146,12 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 
-	for _, keys := range BuildKeys(lmt, request) {
+	sliceKeys := BuildKeys(lmt, request)
+	if len(sliceKeys) == 0 {
+		t.Fatal("Length of sliceKeys should never be empty.")
+	}
+
+	for _, keys := range sliceKeys {
 		if len(keys) != 3 {
 			t.Errorf("Keys should be made of 3 parts. Keys: %v", keys)
 		}
@@ -153,6 +171,7 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 
 func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetMethods([]string{"GET"})
 	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 
@@ -164,7 +183,12 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 
-	for _, keys := range BuildKeys(lmt, request) {
+	sliceKeys := BuildKeys(lmt, request)
+	if len(sliceKeys) == 0 {
+		t.Fatal("Length of sliceKeys should never be empty.")
+	}
+
+	for _, keys := range sliceKeys {
 		if len(keys) != 5 {
 			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
 		}
@@ -190,6 +214,7 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 
 func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetMethods([]string{"GET"})
 	lmt.SetBasicAuthUsers([]string{"bro"})
 
@@ -201,7 +226,12 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 	request.SetBasicAuth("bro", "tato")
 
-	for _, keys := range BuildKeys(lmt, request) {
+	sliceKeys := BuildKeys(lmt, request)
+	if len(sliceKeys) == 0 {
+		t.Fatal("Length of sliceKeys should never be empty.")
+	}
+
+	for _, keys := range sliceKeys {
 		if len(keys) != 4 {
 			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
 		}
@@ -224,6 +254,7 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 
 func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 	lmt.SetMethods([]string{"GET"})
 	lmt.SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 	lmt.SetBasicAuthUsers([]string{"bro"})
@@ -237,7 +268,12 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 	request.SetBasicAuth("bro", "tato")
 
-	for _, keys := range BuildKeys(lmt, request) {
+	sliceKeys := BuildKeys(lmt, request)
+	if len(sliceKeys) == 0 {
+		t.Fatal("Length of sliceKeys should never be empty.")
+	}
+
+	for _, keys := range sliceKeys {
 		if len(keys) != 6 {
 			t.Errorf("Keys should be made of 4 parts. Keys: %v", keys)
 		}
