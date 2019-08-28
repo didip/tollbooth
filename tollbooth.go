@@ -23,7 +23,10 @@ func setResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Req
 
 // NewLimiter is a convenience function to limiter.New.
 func NewLimiter(max float64, tbOptions *limiter.ExpirableOptions) *limiter.Limiter {
-	return limiter.New(tbOptions).SetMax(max).SetBurst(int(math.Max(1, max)))
+	return limiter.New(tbOptions).
+		SetMax(max).
+		SetBurst(int(math.Max(1, max))).
+		SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.
