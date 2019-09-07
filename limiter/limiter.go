@@ -20,7 +20,8 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 		SetOnLimitReached(nil).
 		SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
 		SetForwardedForIndexFromBehind(0).
-		SetHeaders(make(map[string][]string))
+		SetHeaders(make(map[string][]string)).
+		SetContextValues(make(map[string][]string))
 
 	if generalExpirableOptions != nil {
 		lmt.generalExpirableOptions = generalExpirableOptions
@@ -92,12 +93,16 @@ type Limiter struct {
 	// Empty means skip headers checking.
 	headers map[string]*gocache.Cache
 
+	// Map of Context values to limit.
+	contextValues map[string]*gocache.Cache
+
 	// Map of limiters with TTL
 	tokenBuckets *gocache.Cache
 
-	tokenBucketExpirationTTL time.Duration
-	basicAuthExpirationTTL   time.Duration
-	headerEntryExpirationTTL time.Duration
+	tokenBucketExpirationTTL 	time.Duration
+	basicAuthExpirationTTL   	time.Duration
+	headerEntryExpirationTTL 	time.Duration
+	contextEntryExpirationTTL 	time.Duration
 
 	sync.RWMutex
 }
@@ -148,6 +153,22 @@ func (l *Limiter) GetHeaderEntryExpirationTTL() time.Duration {
 	l.RLock()
 	defer l.RUnlock()
 	return l.headerEntryExpirationTTL
+}
+
+// SetContextValueEntryExpirationTTL is thread-safe way of setting custom Context value expiration TTL.
+func (l *Limiter) SetContextValueEntryExpirationTTL(ttl time.Duration) *Limiter {
+	l.Lock()
+	l.contextEntryExpirationTTL = ttl
+	l.Unlock()
+
+	return l
+}
+
+// GetContextValueEntryExpirationTTL is thread-safe way of getting custom Cpntext value expiration TTL.
+func (l *Limiter) GetContextValueEntryExpirationTTL() time.Duration {
+	l.RLock()
+	defer l.RUnlock()
+	return l.contextEntryExpirationTTL
 }
 
 // SetMax is thread-safe way of setting maximum number of requests to limit per duration.
@@ -423,10 +444,116 @@ func (l *Limiter) RemoveHeader(header string) *Limiter {
 	return l
 }
 
-// RemoveHeaderEntries is thread-safe way of adding new entries to 1 HTTP header rule.
+// RemoveHeaderEntries is thread-safe way of removing new entries to 1 HTTP header rule.
 func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string) *Limiter {
 	l.RLock()
 	entries, found := l.headers[header]
+	l.RUnlock()
+
+	if !found {
+		return l
+	}
+
+	for _, toBeRemoved := range entriesForRemoval {
+		entries.Delete(toBeRemoved)
+	}
+
+	return l
+}
+
+// SetContextValues is thread-safe way of setting map of HTTP headers to limit.
+func (l *Limiter) SetContextValues(contextValues map[string][]string) *Limiter {
+	if l.contextValues == nil {
+		l.contextValues = make(map[string]*gocache.Cache)
+	}
+
+	for contextValue, entries := range contextValues {
+		l.SetContextValue(contextValue, entries)
+	}
+
+	return l
+}
+
+// GetContextValues is thread-safe way of getting a map of Context values to limit.
+func (l *Limiter) GetContextValues() map[string][]string {
+	results := make(map[string][]string)
+
+	l.RLock()
+	defer l.RUnlock()
+
+	for contextValue, entriesAsGoCache := range l.contextValues {
+		entries := make([]string, 0)
+
+		for entry, _ := range entriesAsGoCache.Items() {
+			entries = append(entries, entry)
+		}
+
+		results[contextValue] = entries
+	}
+
+	return results
+}
+
+// SetContextValue is thread-safe way of setting entries of 1 Context value.
+func (l *Limiter) SetContextValue(contextValue string, entries []string) *Limiter {
+	l.RLock()
+	existing, found := l.contextValues[contextValue]
+	l.RUnlock()
+
+	ttl := l.GetContextValueEntryExpirationTTL()
+	if ttl <= 0 {
+		ttl = l.generalExpirableOptions.DefaultExpirationTTL
+	}
+
+	if !found {
+		existing = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
+	}
+
+	for _, entry := range entries {
+		existing.Set(entry, true, ttl)
+	}
+
+	l.Lock()
+	l.contextValues[contextValue] = existing
+	l.Unlock()
+
+	return l
+}
+
+// GetContextValue is thread-safe way of getting 1 Context value entry.
+func (l *Limiter) GetContextValue(contextValue string) []string {
+	l.RLock()
+	entriesAsGoCache := l.contextValues[contextValue]
+	l.RUnlock()
+
+	entriesAsMap := entriesAsGoCache.Items()
+	entries := make([]string, 0)
+
+	for entry, _ := range entriesAsMap {
+		entries = append(entries, entry)
+	}
+
+	return entries
+}
+
+// RemoveContextValue is thread-safe way of removing entries of 1 Context value.
+func (l *Limiter) RemoveContextValue(contextValue string) *Limiter {
+	ttl := l.GetContextValueEntryExpirationTTL()
+	if ttl <= 0 {
+		ttl = l.generalExpirableOptions.DefaultExpirationTTL
+	}
+
+	l.Lock()
+	l.contextValues[contextValue] = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
+	l.Unlock()
+
+	return l
+}
+
+// RemoveContextValuesEntries is thread-safe way of removing entries to a ContextValue.
+func (l *Limiter) RemoveContextValuesEntries(contextValue string, entriesForRemoval []string) *Limiter {
+	l.RLock()
+	entries, found := l.contextValues[contextValue]
 	l.RUnlock()
 
 	if !found {
