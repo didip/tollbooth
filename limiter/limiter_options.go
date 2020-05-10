@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// ExpirableOptions are options used for new limiter creation
 type ExpirableOptions struct {
 	DefaultExpirationTTL time.Duration
 

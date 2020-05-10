@@ -79,7 +79,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 				continue
 			}
 
-			if headerValues == nil || len(headerValues) <= 0 {
+			if len(headerValues) == 0 {
 				// If header values are empty, rate-limit all request containing headerKey.
 				headerValuesToLimit = append(headerValuesToLimit, []string{headerKey, reqHeaderValue})
 
@@ -105,7 +105,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 				continue
 			}
 
-			if contextValues == nil || len(contextValues) <= 0 {
+			if len(contextValues) == 0 {
 				// If header values are empty, rate-limit all request containing headerKey.
 				contextValuesToLimit = append(contextValuesToLimit, []string{contextKey, reqContextValue})
 
@@ -158,7 +158,7 @@ func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 			lmt.ExecOnLimitReached(w, r)
 			w.Header().Add("Content-Type", lmt.GetMessageContentType())
 			w.WriteHeader(httpError.StatusCode)
-			w.Write([]byte(httpError.Message))
+			_, _ = w.Write([]byte(httpError.Message))
 			return
 		}
 

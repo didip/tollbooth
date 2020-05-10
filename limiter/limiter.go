@@ -116,7 +116,7 @@ func (l *Limiter) SetTokenBucketExpirationTTL(ttl time.Duration) *Limiter {
 	return l
 }
 
-// GettokenBucketExpirationTTL is thread-safe way of getting custom token bucket expiration TTL.
+// GetTokenBucketExpirationTTL is thread-safe way of getting custom token bucket expiration TTL.
 func (l *Limiter) GetTokenBucketExpirationTTL() time.Duration {
 	l.RLock()
 	defer l.RUnlock()
@@ -338,7 +338,7 @@ func (l *Limiter) SetBasicAuthUsers(basicAuthUsers []string) *Limiter {
 func (l *Limiter) GetBasicAuthUsers() []string {
 	asMap := l.basicAuthUsers.Items()
 
-	var basicAuthUsers []string
+	basicAuthUsers := make([]string, 0, len(asMap))
 	for basicAuthUser := range asMap {
 		basicAuthUsers = append(basicAuthUsers, basicAuthUser)
 	}
