@@ -171,8 +171,8 @@ func TestContextValueBuildKeys(t *testing.T) {
 	}
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
-	type contextKey string
-	request = request.WithContext(context.WithValue(request.Context(), contextKey("API-access-level"), "basic"))
+	//nolint:golint // limiter.SetContextValue requires string as a key, so we have to live with that
+	request = request.WithContext(context.WithValue(request.Context(), "API-access-level", "basic"))
 
 	sliceKeys := BuildKeys(lmt, request)
 	if len(sliceKeys) == 0 {
@@ -314,8 +314,8 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersAndContextValuesBuildKeys(t 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 	request.SetBasicAuth("bro", "tato")
-	type contextKey string
-	request = request.WithContext(context.WithValue(request.Context(), contextKey("API-access-level"), "basic"))
+	//nolint:golint // limiter.SetContextValue requires string as a key, so we have to live with that
+	request = request.WithContext(context.WithValue(request.Context(), "API-access-level", "basic"))
 
 	sliceKeys := BuildKeys(lmt, request)
 	if len(sliceKeys) == 0 {

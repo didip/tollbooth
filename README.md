@@ -139,7 +139,7 @@ func main() {
 
 ## Other Web Frameworks
 
-Sometimes, other frameworks require a little of shim to use Tollbooth. These shims below are contributed by the community, so I make no promises on how well they work. The one I am familiar with are: Chi, Gin, and Negroni.
+Sometimes, other frameworks require a little bit of shim to use Tollbooth. These shims below are contributed by the community, so I make no promises on how well they work. The one I am familiar with are: Chi, Gin, and Negroni.
 
 * [Chi](https://github.com/didip/tollbooth_chi)
 
