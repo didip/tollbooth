@@ -99,10 +99,10 @@ type Limiter struct {
 	// Map of limiters with TTL
 	tokenBuckets *gocache.Cache
 
-	tokenBucketExpirationTTL 	time.Duration
-	basicAuthExpirationTTL   	time.Duration
-	headerEntryExpirationTTL 	time.Duration
-	contextEntryExpirationTTL 	time.Duration
+	tokenBucketExpirationTTL  time.Duration
+	basicAuthExpirationTTL    time.Duration
+	headerEntryExpirationTTL  time.Duration
+	contextEntryExpirationTTL time.Duration
 
 	sync.RWMutex
 }
@@ -164,7 +164,7 @@ func (l *Limiter) SetContextValueEntryExpirationTTL(ttl time.Duration) *Limiter 
 	return l
 }
 
-// GetContextValueEntryExpirationTTL is thread-safe way of getting custom Cpntext value expiration TTL.
+// GetContextValueEntryExpirationTTL is thread-safe way of getting custom Context value expiration TTL.
 func (l *Limiter) GetContextValueEntryExpirationTTL() time.Duration {
 	l.RLock()
 	defer l.RUnlock()
@@ -339,7 +339,7 @@ func (l *Limiter) GetBasicAuthUsers() []string {
 	asMap := l.basicAuthUsers.Items()
 
 	var basicAuthUsers []string
-	for basicAuthUser, _ := range asMap {
+	for basicAuthUser := range asMap {
 		basicAuthUsers = append(basicAuthUsers, basicAuthUser)
 	}
 
@@ -378,7 +378,7 @@ func (l *Limiter) GetHeaders() map[string][]string {
 	for header, entriesAsGoCache := range l.headers {
 		entries := make([]string, 0)
 
-		for entry, _ := range entriesAsGoCache.Items() {
+		for entry := range entriesAsGoCache.Items() {
 			entries = append(entries, entry)
 		}
 
@@ -423,7 +423,7 @@ func (l *Limiter) GetHeader(header string) []string {
 	entriesAsMap := entriesAsGoCache.Items()
 	entries := make([]string, 0)
 
-	for entry, _ := range entriesAsMap {
+	for entry := range entriesAsMap {
 		entries = append(entries, entry)
 	}
 
@@ -484,7 +484,7 @@ func (l *Limiter) GetContextValues() map[string][]string {
 	for contextValue, entriesAsGoCache := range l.contextValues {
 		entries := make([]string, 0)
 
-		for entry, _ := range entriesAsGoCache.Items() {
+		for entry := range entriesAsGoCache.Items() {
 			entries = append(entries, entry)
 		}
 
@@ -529,7 +529,7 @@ func (l *Limiter) GetContextValue(contextValue string) []string {
 	entriesAsMap := entriesAsGoCache.Items()
 	entries := make([]string, 0)
 
-	for entry, _ := range entriesAsMap {
+	for entry := range entriesAsMap {
 		entries = append(entries, entry)
 	}
 

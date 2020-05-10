@@ -58,7 +58,7 @@ func TestDefaultBuildKeys(t *testing.T) {
 			{""},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -92,7 +92,7 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 			{"bro"},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -125,7 +125,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 			{""},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -157,7 +157,7 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 			{""},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -190,7 +190,7 @@ func TestContextValueBuildKeys(t *testing.T) {
 			{""},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -224,7 +224,7 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 			{""},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -258,7 +258,7 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 			{"bro"},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -294,7 +294,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 			{"bro"},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -332,7 +332,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersAndContextValuesBuildKeys(t 
 			{"bro"},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -357,7 +357,7 @@ func TestLimitHandler(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
-	//Should not be limited
+	// Should not be limited
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
