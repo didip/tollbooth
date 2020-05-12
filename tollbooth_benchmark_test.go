@@ -20,7 +20,7 @@ func BenchmarkLimitByKeys(b *testing.B) {
 
 func BenchmarkLimitByKeysWithExpiringBuckets(b *testing.B) {
 	lmt := limiter.New(
-		&limiter.ExpirableOptions{DefaultExpirationTTL: time.Minute, ExpireJobInterval: time.Minute},
+		&limiter.ExpirableOptions{DefaultExpirationTTL: time.Minute},
 	).SetMax(1) // Only 1 request per second is allowed.
 
 	for i := 0; i < b.N; i++ {
