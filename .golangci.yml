@@ -31,4 +31,7 @@ issues:
     - path: _test\.go
       linters:
         - dupl
+    - text: "Errors unhandled"
+      linters:
+        - gosec
   exclude-use-default: false

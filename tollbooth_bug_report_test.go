@@ -18,7 +18,7 @@ func Test_Issue48_RequestTerminatedEvenOnLowVolumeOnSameIP(t *testing.T) {
 	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) { limitReachedCounter++ })
 
 	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(`hello world`))
+		w.Write([]byte(`hello world`))
 	}))
 
 	// The issue seen by the reporter is that the limiter slowly "leaks", causing requests

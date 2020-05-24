@@ -158,7 +158,7 @@ func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 			lmt.ExecOnLimitReached(w, r)
 			w.Header().Add("Content-Type", lmt.GetMessageContentType())
 			w.WriteHeader(httpError.StatusCode)
-			_, _ = w.Write([]byte(httpError.Message))
+			w.Write([]byte(httpError.Message))
 			return
 		}
 

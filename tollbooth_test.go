@@ -347,7 +347,7 @@ func TestLimitHandler(t *testing.T) {
 	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) { counter++ })
 
 	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(`hello world`))
+		w.Write([]byte(`hello world`))
 	}))
 
 	req, err := http.NewRequest("POST", "/doesntmatter", nil)
