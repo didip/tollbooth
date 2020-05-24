@@ -22,6 +22,8 @@ This is a generic middleware to rate-limit HTTP requests.
 
 **v5.x.x:** go.mod and go.sum
 
+**v6.x.x:** Replaced `go-cache` with `github.com/go-pkgz/expirable-cache` because `go-cache` leaks goroutines.
+
 
 ## Five Minute Tutorial
 ```go
