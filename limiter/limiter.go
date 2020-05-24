@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	gocache "github.com/patrickmn/go-cache"
+	"github.com/go-pkgz/expirable-cache"
 	"golang.org/x/time/rate"
 )
 
@@ -29,25 +29,14 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 		lmt.generalExpirableOptions = &ExpirableOptions{}
 	}
 
-	// Default for ExpireJobInterval is every minute.
-	if lmt.generalExpirableOptions.ExpireJobInterval <= 0 {
-		lmt.generalExpirableOptions.ExpireJobInterval = time.Minute
-	}
-
 	// Default for DefaultExpirationTTL is 10 years.
 	if lmt.generalExpirableOptions.DefaultExpirationTTL <= 0 {
 		lmt.generalExpirableOptions.DefaultExpirationTTL = 87600 * time.Hour
 	}
 
-	lmt.tokenBuckets = gocache.New(
-		lmt.generalExpirableOptions.DefaultExpirationTTL,
-		lmt.generalExpirableOptions.ExpireJobInterval,
-	)
+	lmt.tokenBuckets, _ = cache.NewCache(cache.TTL(lmt.generalExpirableOptions.DefaultExpirationTTL))
 
-	lmt.basicAuthUsers = gocache.New(
-		lmt.generalExpirableOptions.DefaultExpirationTTL,
-		lmt.generalExpirableOptions.ExpireJobInterval,
-	)
+	lmt.basicAuthUsers, _ = cache.NewCache(cache.TTL(lmt.generalExpirableOptions.DefaultExpirationTTL))
 
 	return lmt
 }
@@ -87,17 +76,17 @@ type Limiter struct {
 	generalExpirableOptions *ExpirableOptions
 
 	// List of basic auth usernames to limit.
-	basicAuthUsers *gocache.Cache
+	basicAuthUsers cache.Cache
 
 	// Map of HTTP headers to limit.
 	// Empty means skip headers checking.
-	headers map[string]*gocache.Cache
+	headers map[string]cache.Cache
 
 	// Map of Context values to limit.
-	contextValues map[string]*gocache.Cache
+	contextValues map[string]cache.Cache
 
 	// Map of limiters with TTL
-	tokenBuckets *gocache.Cache
+	tokenBuckets cache.Cache
 
 	tokenBucketExpirationTTL  time.Duration
 	basicAuthExpirationTTL    time.Duration
@@ -336,20 +325,13 @@ func (l *Limiter) SetBasicAuthUsers(basicAuthUsers []string) *Limiter {
 
 // GetBasicAuthUsers is thread-safe way of getting list of basic auth usernames to limit.
 func (l *Limiter) GetBasicAuthUsers() []string {
-	asMap := l.basicAuthUsers.Items()
-
-	basicAuthUsers := make([]string, 0, len(asMap))
-	for basicAuthUser := range asMap {
-		basicAuthUsers = append(basicAuthUsers, basicAuthUser)
-	}
-
-	return basicAuthUsers
+	return l.basicAuthUsers.Keys()
 }
 
 // RemoveBasicAuthUsers is thread-safe way of removing basic auth usernames from existing list.
 func (l *Limiter) RemoveBasicAuthUsers(basicAuthUsers []string) *Limiter {
 	for _, toBeRemoved := range basicAuthUsers {
-		l.basicAuthUsers.Delete(toBeRemoved)
+		l.basicAuthUsers.Invalidate(toBeRemoved)
 	}
 
 	return l
@@ -358,7 +340,7 @@ func (l *Limiter) RemoveBasicAuthUsers(basicAuthUsers []string) *Limiter {
 // SetHeaders is thread-safe way of setting map of HTTP headers to limit.
 func (l *Limiter) SetHeaders(headers map[string][]string) *Limiter {
 	if l.headers == nil {
-		l.headers = make(map[string]*gocache.Cache)
+		l.headers = make(map[string]cache.Cache)
 	}
 
 	for header, entries := range headers {
@@ -376,13 +358,7 @@ func (l *Limiter) GetHeaders() map[string][]string {
 	defer l.RUnlock()
 
 	for header, entriesAsGoCache := range l.headers {
-		entries := make([]string, 0)
-
-		for entry := range entriesAsGoCache.Items() {
-			entries = append(entries, entry)
-		}
-
-		results[header] = entries
+		results[header] = entriesAsGoCache.Keys()
 	}
 
 	return results
@@ -400,7 +376,7 @@ func (l *Limiter) SetHeader(header string, entries []string) *Limiter {
 	}
 
 	if !found {
-		existing = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
+		existing, _ = cache.NewCache(cache.TTL(ttl))
 	}
 
 	for _, entry := range entries {
@@ -420,14 +396,7 @@ func (l *Limiter) GetHeader(header string) []string {
 	entriesAsGoCache := l.headers[header]
 	l.RUnlock()
 
-	entriesAsMap := entriesAsGoCache.Items()
-	entries := make([]string, 0)
-
-	for entry := range entriesAsMap {
-		entries = append(entries, entry)
-	}
-
-	return entries
+	return entriesAsGoCache.Keys()
 }
 
 // RemoveHeader is thread-safe way of removing entries of 1 HTTP header.
@@ -438,7 +407,7 @@ func (l *Limiter) RemoveHeader(header string) *Limiter {
 	}
 
 	l.Lock()
-	l.headers[header] = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
+	l.headers[header], _ = cache.NewCache(cache.TTL(ttl))
 	l.Unlock()
 
 	return l
@@ -455,7 +424,7 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 	}
 
 	for _, toBeRemoved := range entriesForRemoval {
-		entries.Delete(toBeRemoved)
+		entries.Invalidate(toBeRemoved)
 	}
 
 	return l
@@ -464,7 +433,7 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 // SetContextValues is thread-safe way of setting map of HTTP headers to limit.
 func (l *Limiter) SetContextValues(contextValues map[string][]string) *Limiter {
 	if l.contextValues == nil {
-		l.contextValues = make(map[string]*gocache.Cache)
+		l.contextValues = make(map[string]cache.Cache)
 	}
 
 	for contextValue, entries := range contextValues {
@@ -482,13 +451,7 @@ func (l *Limiter) GetContextValues() map[string][]string {
 	defer l.RUnlock()
 
 	for contextValue, entriesAsGoCache := range l.contextValues {
-		entries := make([]string, 0)
-
-		for entry := range entriesAsGoCache.Items() {
-			entries = append(entries, entry)
-		}
-
-		results[contextValue] = entries
+		results[contextValue] = entriesAsGoCache.Keys()
 	}
 
 	return results
@@ -506,7 +469,7 @@ func (l *Limiter) SetContextValue(contextValue string, entries []string) *Limite
 	}
 
 	if !found {
-		existing = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
+		existing, _ = cache.NewCache(cache.TTL(ttl))
 	}
 
 	for _, entry := range entries {
@@ -526,14 +489,7 @@ func (l *Limiter) GetContextValue(contextValue string) []string {
 	entriesAsGoCache := l.contextValues[contextValue]
 	l.RUnlock()
 
-	entriesAsMap := entriesAsGoCache.Items()
-	entries := make([]string, 0)
-
-	for entry := range entriesAsMap {
-		entries = append(entries, entry)
-	}
-
-	return entries
+	return entriesAsGoCache.Keys()
 }
 
 // RemoveContextValue is thread-safe way of removing entries of 1 Context value.
@@ -544,7 +500,7 @@ func (l *Limiter) RemoveContextValue(contextValue string) *Limiter {
 	}
 
 	l.Lock()
-	l.contextValues[contextValue] = gocache.New(ttl, l.generalExpirableOptions.ExpireJobInterval)
+	l.contextValues[contextValue], _ = cache.NewCache(cache.TTL(ttl))
 	l.Unlock()
 
 	return l
@@ -561,7 +517,7 @@ func (l *Limiter) RemoveContextValuesEntries(contextValue string, entriesForRemo
 	}
 
 	for _, toBeRemoved := range entriesForRemoval {
-		entries.Delete(toBeRemoved)
+		entries.Invalidate(toBeRemoved)
 	}
 
 	return l
