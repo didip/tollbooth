@@ -165,3 +165,9 @@ Sometimes, other frameworks require a little bit of shim to use Tollbooth. These
 * [LaborUnion](https://github.com/didip/laborunion): A dynamic worker pool library.
 
 * [Gomet](https://github.com/didip/gomet): Simple HTTP client & server long poll library for Go. Useful for receiving live updates without needing Websocket.
+
+## Contributions
+
+Before sending a PR with code changes, please make sure altered code is covered with tests which are passing, and that golangci-lint shows no errors.
+
+To check the linter output, [install it](https://golangci-lint.run/usage/install/#local-installation) and then run `golangci-lint run` in the root directory of the repository.
