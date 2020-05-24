@@ -171,7 +171,7 @@ func (l *Limiter) GetContextValueEntryExpirationTTL() time.Duration {
 	return l.contextEntryExpirationTTL
 }
 
-// SetMax is thread-safe way of setting maximum number of requests to limit per duration.
+// SetMax is thread-safe way of setting maximum number of requests to limit per second.
 func (l *Limiter) SetMax(max float64) *Limiter {
 	l.Lock()
 	l.max = max
@@ -180,7 +180,7 @@ func (l *Limiter) SetMax(max float64) *Limiter {
 	return l
 }
 
-// GetMax is thread-safe way of getting maximum number of requests to limit per duration.
+// GetMax is thread-safe way of getting maximum number of requests to limit per second.
 func (l *Limiter) GetMax() float64 {
 	l.RLock()
 	defer l.RUnlock()
