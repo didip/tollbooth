@@ -2,11 +2,10 @@
 package tollbooth
 
 import (
-	"net/http"
-	"strings"
-
 	"fmt"
 	"math"
+	"net/http"
+	"strings"
 
 	"github.com/didip/tollbooth/v5/errors"
 	"github.com/didip/tollbooth/v5/libstring"
@@ -80,7 +79,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 				continue
 			}
 
-			if headerValues == nil || len(headerValues) <= 0 {
+			if len(headerValues) == 0 {
 				// If header values are empty, rate-limit all request containing headerKey.
 				headerValuesToLimit = append(headerValuesToLimit, []string{headerKey, reqHeaderValue})
 
@@ -106,7 +105,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 				continue
 			}
 
-			if contextValues == nil || len(contextValues) <= 0 {
+			if len(contextValues) == 0 {
 				// If header values are empty, rate-limit all request containing headerKey.
 				contextValuesToLimit = append(contextValuesToLimit, []string{contextKey, reqContextValue})
 
@@ -129,7 +128,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 			sliceKeys = append(sliceKeys, []string{remoteIP, path, method, header[0], header[1], contextValue[0], contextValue[1], usernameToLimit})
 		}
 	}
-	
+
 	return sliceKeys
 }
 

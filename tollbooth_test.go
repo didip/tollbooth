@@ -58,7 +58,7 @@ func TestDefaultBuildKeys(t *testing.T) {
 			{""},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -92,7 +92,7 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 			{"bro"},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -125,7 +125,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 			{""},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -157,7 +157,7 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 			{""},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -171,6 +171,7 @@ func TestContextValueBuildKeys(t *testing.T) {
 	}
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	//nolint:golint,staticcheck // limiter.SetContextValue requires string as a key, so we have to live with that
 	request = request.WithContext(context.WithValue(request.Context(), "API-access-level", "basic"))
 
 	sliceKeys := BuildKeys(lmt, request)
@@ -190,7 +191,7 @@ func TestContextValueBuildKeys(t *testing.T) {
 			{""},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -224,7 +225,7 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 			{""},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -258,7 +259,7 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 			{"bro"},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -294,7 +295,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 			{"bro"},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -313,6 +314,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersAndContextValuesBuildKeys(t 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 	request.SetBasicAuth("bro", "tato")
+	//nolint:golint,staticcheck // limiter.SetContextValue requires string as a key, so we have to live with that
 	request = request.WithContext(context.WithValue(request.Context(), "API-access-level", "basic"))
 
 	sliceKeys := BuildKeys(lmt, request)
@@ -332,7 +334,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersAndContextValuesBuildKeys(t 
 			{"bro"},
 		}
 
-		checkKeys(t, keys,expectedKeys )
+		checkKeys(t, keys, expectedKeys)
 	}
 }
 
@@ -357,7 +359,7 @@ func TestLimitHandler(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
-	//Should not be limited
+	// Should not be limited
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
@@ -385,22 +387,24 @@ func checkKeys(t *testing.T, keys []string, expectedKeys [][]string) {
 	}
 
 	for i, keyChunk := range keys {
-		if i == 0 && !isInSlice(keyChunk, expectedKeys[0]) {
+		switch {
+		case i == 0 && !isInSlice(keyChunk, expectedKeys[0]):
 			t.Errorf("The (%v) chunk should be remote IP. KeyChunk: %v", i+1, keyChunk)
-		} else if i == 1 && !isInSlice(keyChunk, expectedKeys[1]) {
+		case i == 1 && !isInSlice(keyChunk, expectedKeys[1]):
 			t.Errorf("The (%v) chunk should be request path. KeyChunk: %v", i+1, keyChunk)
-		} else if i == 2 && !isInSlice(keyChunk, expectedKeys[2]) {
+		case i == 2 && !isInSlice(keyChunk, expectedKeys[2]):
 			t.Errorf("The (%v) chunk should be request method. KeyChunk: %v", i+1, keyChunk)
-		} else if i == 3 && !isInSlice(keyChunk, expectedKeys[3]) {
+		case i == 3 && !isInSlice(keyChunk, expectedKeys[3]):
 			t.Errorf("The (%v) chunk should be request header. KeyChunk: %v", i+1, keyChunk)
-		} else if i == 4 && !isInSlice(keyChunk, expectedKeys[4]) {
+		case i == 4 && !isInSlice(keyChunk, expectedKeys[4]):
 			t.Errorf("The (%v) chunk should be request header value. KeyChunk: %v", i+1, keyChunk)
-		} else if i == 5 && !isInSlice(keyChunk, expectedKeys[5]) {
+		case i == 5 && !isInSlice(keyChunk, expectedKeys[5]):
 			t.Errorf("The (%v) chunk should be context key. KeyChunk: %v", i+1, keyChunk)
-		} else if i == 6 && !isInSlice(keyChunk, expectedKeys[6]) {
+		case i == 6 && !isInSlice(keyChunk, expectedKeys[6]):
 			t.Errorf("The (%v) chunk should be context value. KeyChunk: %v", i+1, keyChunk)
-		} else if i == 7 && !isInSlice(keyChunk, expectedKeys[7]) {
+		case i == 7 && !isInSlice(keyChunk, expectedKeys[7]):
 			t.Errorf("The (%v) chunk should be basic auth user. KeyChunk: %v", i+1, keyChunk)
+
 		}
 	}
 }

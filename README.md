@@ -12,11 +12,11 @@ This is a generic middleware to rate-limit HTTP requests.
 
 ## Versions
 
-**v1.0.0:** This version maintains the old API but all of the thirdparty modules are moved to their own repo.
+**v1.0.0:** This version maintains the old API but all the thirdparty modules are moved to their own repo.
 
-**v2.x.x:** Brand new API for the sake of code cleanup, thread safety, & auto-expiring data structures.
+**v2.x.x:** Brand-new API for the sake of code cleanup, thread safety, & auto-expiring data structures.
 
-**v3.x.x:** Apparently we have been using golang.org/x/time/rate incorrectly. See issue #48. It always limit X number per 1 second. The time duration is not changeable, so it does not make sense to pass TTL to tollbooth.
+**v3.x.x:** Apparently we have been using golang.org/x/time/rate incorrectly. See issue #48. It always limits X number per 1 second. The time duration is not changeable, so it does not make sense to pass TTL to tollbooth.
 
 **v4.x.x:** Float64 for max requests per second
 
@@ -30,7 +30,6 @@ package main
 import (
     "github.com/didip/tollbooth"
     "net/http"
-    "time"
 )
 
 func HelloHandler(w http.ResponseWriter, req *http.Request) {
@@ -135,7 +134,7 @@ func main() {
     lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) { fmt.Println("A request was rejected") })
     ```
 
-6. Tollbooth does not require external storage since it uses an algorithm called [Token Bucket](http://en.wikipedia.org/wiki/Token_bucket) [(Go library: golang.org/x/time/rate)](//godoc.org/golang.org/x/time/rate).
+6. Tollbooth does not require external storage since it uses an algorithm called [Token Bucket](http://en.wikipedia.org/wiki/Token_bucket) [(Go library: golang.org/x/time/rate)](https://godoc.org/golang.org/x/time/rate).
 
 
 ## Other Web Frameworks
@@ -166,3 +165,9 @@ Sometimes, other frameworks require a little bit of shim to use Tollbooth. These
 * [LaborUnion](https://github.com/didip/laborunion): A dynamic worker pool library.
 
 * [Gomet](https://github.com/didip/gomet): Simple HTTP client & server long poll library for Go. Useful for receiving live updates without needing Websocket.
+
+## Contributions
+
+Before sending a PR with code changes, please make sure altered code is covered with tests which are passing, and that golangci-lint shows no errors.
+
+To check the linter output, [install it](https://golangci-lint.run/usage/install/#local-installation) and then run `golangci-lint run` in the root directory of the repository.
