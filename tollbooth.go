@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/didip/tollbooth/v5/errors"
-	"github.com/didip/tollbooth/v5/libstring"
-	"github.com/didip/tollbooth/v5/limiter"
+	"github.com/didip/tollbooth/v6/errors"
+	"github.com/didip/tollbooth/v6/libstring"
+	"github.com/didip/tollbooth/v6/limiter"
 )
 
 // setResponseHeaders configures X-Rate-Limit-Limit and X-Rate-Limit-Duration
