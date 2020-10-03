@@ -271,7 +271,7 @@ func (l *Limiter) SetOverrideDefaultResponseWriter(override bool) {
 	l.Unlock()
 }
 
-// SetOverrideDefaultResponseWriter is a thread-safe way of getting the response writer override variable.
+// GetOverrideDefaultResponseWriter is a thread-safe way of getting the response writer override variable.
 func (l *Limiter) GetOverrideDefaultResponseWriter() bool {
 	l.RLock()
 	defer l.RUnlock()
