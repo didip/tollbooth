@@ -156,6 +156,9 @@ func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 		httpError := LimitByRequest(lmt, w, r)
 		if httpError != nil {
 			lmt.ExecOnLimitReached(w, r)
+			if lmt.GetOverrideDefaultResponseWriter() {
+				return
+			}
 			w.Header().Add("Content-Type", lmt.GetMessageContentType())
 			w.WriteHeader(httpError.StatusCode)
 			w.Write([]byte(httpError.Message))
