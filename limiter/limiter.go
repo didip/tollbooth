@@ -264,12 +264,14 @@ func (l *Limiter) ExecOnLimitReached(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// SetOverrideDefaultResponseWriter is a thread-safe way of setting the response writer override variable.
 func (l *Limiter) SetOverrideDefaultResponseWriter(override bool) {
 	l.Lock()
 	l.overrideDefaultResponseWriter = override
 	l.Unlock()
 }
 
+// SetOverrideDefaultResponseWriter is a thread-safe way of getting the response writer override variable.
 func (l *Limiter) GetOverrideDefaultResponseWriter() bool {
 	l.RLock()
 	defer l.RUnlock()
