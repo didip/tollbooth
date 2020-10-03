@@ -381,6 +381,55 @@ func TestLimitHandler(t *testing.T) {
 	<-ch // Block until go func is done.
 }
 
+func TestOverrideForResponseWriter(t *testing.T) {
+	lmt := limiter.New(nil).SetMax(1).SetBurst(1)
+	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
+	lmt.SetMethods([]string{"POST"})
+	lmt.SetOverrideDefaultResponseWriter(true)
+
+	counter := 0
+	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotAcceptable)
+		w.Write([]byte("rejecting the large amount of requests"))
+		counter++
+	})
+
+	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`hello world`))
+	}))
+
+	req, err := http.NewRequest("POST", "/doesntmatter", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	// Should not be limited
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	ch := make(chan int)
+	go func() {
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, req)
+		// Should be limited
+		if status := rr.Code; status != http.StatusNotAcceptable {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNotAcceptable)
+		}
+		// OnLimitReached should be called
+		if counter != 1 {
+			t.Errorf("onLimitReached was not called")
+		}
+		close(ch)
+	}()
+	<-ch // Block until go func is done.
+}
+
 func checkKeys(t *testing.T, keys []string, expectedKeys [][]string) {
 	if len(keys) != 8 {
 		t.Errorf("Keys should be made of 8 parts. Keys: %v", keys)
