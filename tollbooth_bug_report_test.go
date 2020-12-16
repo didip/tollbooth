@@ -107,7 +107,7 @@ limiter.headers: %v`,
 		// 2nd, 429
 		response, _ = client.Do(request)
 		if response.StatusCode != http.StatusTooManyRequests {
-			t.Fatalf(`Both customer must pass rate limiter.
+			t.Fatalf(`Both customer must fail rate limiter.
 Expected to receive: %v status code. Got: %v`,
 				http.StatusTooManyRequests, response.StatusCode)
 		}

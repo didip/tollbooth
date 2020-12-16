@@ -46,6 +46,14 @@ func LimitByKeys(lmt *limiter.Limiter, keys []string) *errors.HTTPError {
 // ShouldSkipLimiter is a series of filter that decides if request should be limited or not.
 func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 	// ---------------------------------
+	// Filter by remote ip
+	// If we are unable to find remoteIP, skip limiter
+	remoteIP := libstring.RemoteIP(lmt.GetIPLookups(), lmt.GetForwardedForIndexFromBehind(), r)
+	if remoteIP == "" {
+		return true
+	}
+
+	// ---------------------------------
 	// Filter by request method
 	lmtMethods := lmt.GetMethods()
 	lmtMethodsIsSet := len(lmtMethods) > 0
@@ -81,7 +89,8 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 		}
 
 		// ------------------------------
-
+		// If request contains the header key but not the values,
+		// skip limiter
 		requestHeadersDefinedInLimiter = false
 
 		for headerKey, headerValues := range lmtHeaders {
@@ -98,6 +107,24 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 		}
 	}
 
+	// ---------------------------------
+	// Filter by basic auth usernames
+	// lmtBasicAuthUsers := lmt.GetBasicAuthUsers()
+	// lmtBasicAuthUsersIsSet := len(lmtBasicAuthUsers) > 0
+
+	// requestAuthUsernameDefinedInLimiter := false
+
+	// if lmtBasicAuthUsersIsSet {
+	// 	username, _, ok := r.BasicAuth()
+	// 	if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
+	// 		requestAuthUsernameDefinedInLimiter = true
+	// 	}
+	// }
+
+	// if !requestAuthUsernameDefinedInLimiter {
+	// 	return true
+	// }
+
 	return false
 }
 
@@ -106,11 +133,6 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 	remoteIP := libstring.RemoteIP(lmt.GetIPLookups(), lmt.GetForwardedForIndexFromBehind(), r)
 	path := r.URL.Path
 	sliceKeys := make([][]string, 0)
-
-	// Don't BuildKeys if remoteIP is blank.
-	if remoteIP == "" {
-		return sliceKeys
-	}
 
 	lmtMethods := lmt.GetMethods()
 	lmtHeaders := lmt.GetHeaders()
