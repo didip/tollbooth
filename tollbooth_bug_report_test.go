@@ -131,3 +131,74 @@ Expected to receive: %v status code. Got: %v`,
 		}
 	}
 }
+
+func Test_Issue91_BrokenSetMethod_DontBlockGet(t *testing.T) {
+	requestsPerSecond := float64(1)
+
+	lmt := NewLimiter(requestsPerSecond, nil)
+	lmt.SetMethods([]string{"POST"})
+
+	methods := lmt.GetMethods()
+	if methods[0] != "POST" {
+		t.Fatalf("Failed to set methods correctly. Expected: POST Got: %v", methods[0])
+	}
+
+	// -------------------------------------------------------------------
+
+	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`hello world`))
+	}))
+
+	// Create GET HTTP request
+	req, _ := http.NewRequest("GET", "/doesntmatter", nil)
+	req.RemoteAddr = "127.0.0.1"
+
+	// We should never reach the limit because we are sending 10 GET requests and
+	// we are only limiting POST requests.
+	for i := 0; i < 10; i++ {
+		start := time.Now()
+
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("Should be able to handle %v reqs/second. HTTP status: %v. Expected HTTP status: %v. Failed in %v microseconds", requestsPerSecond, rr.Code, http.StatusOK, time.Since(start).Microseconds())
+		}
+	}
+}
+
+func Test_Issue91_BrokenSetMethod_BlockPost(t *testing.T) {
+	requestsPerSecond := float64(1)
+
+	lmt := NewLimiter(requestsPerSecond, nil)
+	lmt.SetMethods([]string{"POST"})
+
+	limitReachedCounter := 0
+	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) { limitReachedCounter++ })
+
+	methods := lmt.GetMethods()
+	if methods[0] != "POST" {
+		t.Fatalf("Failed to set methods correctly. Expected: POST Got: %v", methods[0])
+	}
+
+	// -------------------------------------------------------------------
+
+	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`hello world`))
+	}))
+
+	// Create POST HTTP request
+	req, _ := http.NewRequest("POST", "/blockmeafter2", nil)
+	req.RemoteAddr = "127.0.0.1"
+
+	// We should reach the limit because we are sending 2 POST requests and
+	// our limiter is 1 POST per second.
+	for i := 0; i < 2; i++ {
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, req)
+	}
+
+	if limitReachedCounter == 0 {
+		t.Fatalf("Should have reached limit. Limit reached counter: %d", limitReachedCounter)
+	}
+}

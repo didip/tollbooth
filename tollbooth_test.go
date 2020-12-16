@@ -50,12 +50,6 @@ func TestDefaultBuildKeys(t *testing.T) {
 		expectedKeys := [][]string{
 			{request.Header.Get("X-Real-IP")},
 			{request.URL.Path},
-			{""},
-			{""},
-			{""},
-			{""},
-			{""},
-			{""},
 		}
 
 		checkKeys(t, keys, expectedKeys)
@@ -84,11 +78,6 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 		expectedKeys := [][]string{
 			{request.Header.Get("X-Real-IP")},
 			{request.URL.Path},
-			{""},
-			{""},
-			{""},
-			{""},
-			{""},
 			{"bro"},
 		}
 
@@ -117,12 +106,8 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 		expectedKeys := [][]string{
 			{request.Header.Get("X-Real-IP")},
 			{request.URL.Path},
-			{""},
 			{"X-Auth-Token"},
 			{"totally-top-secret", "another-secret"},
-			{""},
-			{""},
-			{""},
 		}
 
 		checkKeys(t, keys, expectedKeys)
@@ -150,11 +135,6 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 			{request.Header.Get("X-Real-IP")},
 			{request.URL.Path},
 			{"GET"},
-			{""},
-			{""},
-			{""},
-			{""},
-			{""},
 		}
 
 		checkKeys(t, keys, expectedKeys)
@@ -183,12 +163,8 @@ func TestContextValueBuildKeys(t *testing.T) {
 		expectedKeys := [][]string{
 			{request.Header.Get("X-Real-IP")},
 			{request.URL.Path},
-			{""},
-			{""},
-			{""},
 			{"API-access-level"},
 			{"basic"},
-			{""},
 		}
 
 		checkKeys(t, keys, expectedKeys)
@@ -220,9 +196,6 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 			{"GET"},
 			{"X-Auth-Token"},
 			{"totally-top-secret", "another-secret"},
-			{""},
-			{""},
-			{""},
 		}
 
 		checkKeys(t, keys, expectedKeys)
@@ -252,10 +225,6 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 			{request.Header.Get("X-Real-IP")},
 			{request.URL.Path},
 			{"GET"},
-			{""},
-			{""},
-			{""},
-			{""},
 			{"bro"},
 		}
 
@@ -290,8 +259,6 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 			{"GET"},
 			{"X-Auth-Token"},
 			{"totally-top-secret", "another-secret"},
-			{""},
-			{""},
 			{"bro"},
 		}
 
@@ -431,29 +398,28 @@ func TestOverrideForResponseWriter(t *testing.T) {
 }
 
 func checkKeys(t *testing.T, keys []string, expectedKeys [][]string) {
-	if len(keys) != 8 {
-		t.Errorf("Keys should be made of 8 parts. Keys: %v", keys)
-	}
-
 	for i, keyChunk := range keys {
 		switch {
 		case i == 0 && !isInSlice(keyChunk, expectedKeys[0]):
 			t.Errorf("The (%v) chunk should be remote IP. KeyChunk: %v", i+1, keyChunk)
 		case i == 1 && !isInSlice(keyChunk, expectedKeys[1]):
 			t.Errorf("The (%v) chunk should be request path. KeyChunk: %v", i+1, keyChunk)
-		case i == 2 && !isInSlice(keyChunk, expectedKeys[2]):
-			t.Errorf("The (%v) chunk should be request method. KeyChunk: %v", i+1, keyChunk)
-		case i == 3 && !isInSlice(keyChunk, expectedKeys[3]):
-			t.Errorf("The (%v) chunk should be request header. KeyChunk: %v", i+1, keyChunk)
-		case i == 4 && !isInSlice(keyChunk, expectedKeys[4]):
-			t.Errorf("The (%v) chunk should be request header value. KeyChunk: %v", i+1, keyChunk)
-		case i == 5 && !isInSlice(keyChunk, expectedKeys[5]):
-			t.Errorf("The (%v) chunk should be context key. KeyChunk: %v", i+1, keyChunk)
-		case i == 6 && !isInSlice(keyChunk, expectedKeys[6]):
-			t.Errorf("The (%v) chunk should be context value. KeyChunk: %v", i+1, keyChunk)
-		case i == 7 && !isInSlice(keyChunk, expectedKeys[7]):
-			t.Errorf("The (%v) chunk should be basic auth user. KeyChunk: %v", i+1, keyChunk)
+		}
+	}
 
+	for _, ekeys := range expectedKeys {
+		found := false
+		for _, ekey := range ekeys {
+			for _, key := range keys {
+				if ekey == key {
+					found = true
+					break
+				}
+			}
+		}
+
+		if !found {
+			t.Fatalf("expectedKeys missing: %v", strings.Join(ekeys, " "))
 		}
 	}
 }

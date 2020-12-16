@@ -63,11 +63,6 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 	lmtContextValuesIsSet := len(lmtContextValues) > 0
 	lmtBasicAuthUsersIsSet := len(lmtBasicAuthUsers) > 0
 
-	method := ""
-	if lmtMethods != nil && libstring.StringInSlice(lmtMethods, r.Method) {
-		method = r.Method
-	}
-
 	usernameToLimit := ""
 	if lmtBasicAuthUsersIsSet {
 		username, _, ok := r.BasicAuth()
@@ -99,7 +94,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 	} else {
-		headerValuesToLimit = append(headerValuesToLimit, []string{"", ""})
+		// headerValuesToLimit = append(headerValuesToLimit, []string{"", ""})
 	}
 
 	contextValuesToLimit := [][]string{}
@@ -125,13 +120,29 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 			}
 		}
 	} else {
-		contextValuesToLimit = append(contextValuesToLimit, []string{"", ""})
+		// contextValuesToLimit = append(contextValuesToLimit, []string{"", ""})
+	}
+
+	sliceKey := []string{remoteIP, path}
+
+	for _, method := range lmtMethods {
+		sliceKey = append(sliceKey, method)
 	}
 
 	for _, header := range headerValuesToLimit {
-		for _, contextValue := range contextValuesToLimit {
-			sliceKeys = append(sliceKeys, []string{remoteIP, path, method, header[0], header[1], contextValue[0], contextValue[1], usernameToLimit})
-		}
+		sliceKey = append(sliceKey, header[0], header[1])
+	}
+
+	for _, contextValue := range contextValuesToLimit {
+		sliceKey = append(sliceKey, contextValue[0], contextValue[1])
+	}
+
+	sliceKey = append(sliceKey, usernameToLimit)
+
+	sliceKeys = append(sliceKeys, sliceKey)
+
+	for _, k := range sliceKeys {
+		println(strings.Join(k, " "))
 	}
 
 	return sliceKeys
