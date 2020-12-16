@@ -43,6 +43,64 @@ func LimitByKeys(lmt *limiter.Limiter, keys []string) *errors.HTTPError {
 	return nil
 }
 
+// ShouldSkipLimiter is a series of filter that decides if request should be limited or not.
+func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
+	// ---------------------------------
+	// Filter by request method
+	lmtMethods := lmt.GetMethods()
+	lmtMethodsIsSet := len(lmtMethods) > 0
+
+	if lmtMethodsIsSet {
+		requestMethodDefinedInLimiter := libstring.StringInSlice(lmtMethods, r.Method)
+
+		if !requestMethodDefinedInLimiter {
+			return true
+		}
+	}
+
+	// ---------------------------------
+	// Filter by request headers
+	lmtHeaders := lmt.GetHeaders()
+	lmtHeadersIsSet := len(lmtHeaders) > 0
+
+	if lmtHeadersIsSet {
+		// If request does not contain all of the headers in limiter,
+		// skip limiter
+		requestHeadersDefinedInLimiter := false
+
+		for headerKey := range lmtHeaders {
+			reqHeaderValue := r.Header.Get(headerKey)
+			if reqHeaderValue != "" {
+				requestHeadersDefinedInLimiter = true
+				break
+			}
+		}
+
+		if !requestHeadersDefinedInLimiter {
+			return true
+		}
+
+		// ------------------------------
+
+		requestHeadersDefinedInLimiter = false
+
+		for headerKey, headerValues := range lmtHeaders {
+			for _, headerValue := range headerValues {
+				if r.Header.Get(headerKey) == headerValue {
+					requestHeadersDefinedInLimiter = true
+					break
+				}
+			}
+		}
+
+		if !requestHeadersDefinedInLimiter {
+			return true
+		}
+	}
+
+	return false
+}
+
 // BuildKeys generates a slice of keys to rate-limit by given limiter and request structs.
 func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 	remoteIP := libstring.RemoteIP(lmt.GetIPLookups(), lmt.GetForwardedForIndexFromBehind(), r)
@@ -152,6 +210,11 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 // loops through all the keys, and check if any one of them returns HTTPError.
 func LimitByRequest(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) *errors.HTTPError {
 	setResponseHeaders(lmt, w, r)
+
+	shouldSkip := ShouldSkipLimiter(lmt, r)
+	if shouldSkip {
+		return nil
+	}
 
 	sliceKeys := BuildKeys(lmt, r)
 
