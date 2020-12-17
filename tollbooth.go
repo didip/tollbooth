@@ -59,6 +59,8 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 	lmtMethodsIsSet := len(lmtMethods) > 0
 
 	if lmtMethodsIsSet {
+		// If request does not contain all of the methods in limiter,
+		// skip limiter
 		requestMethodDefinedInLimiter := libstring.StringInSlice(lmtMethods, r.Method)
 
 		if !requestMethodDefinedInLimiter {
@@ -108,22 +110,65 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 	}
 
 	// ---------------------------------
+	// Filter by context values
+	lmtContextValues := lmt.GetContextValues()
+	lmtContextValuesIsSet := len(lmtContextValues) > 0
+
+	if lmtContextValuesIsSet {
+		// If request does not contain all of the contexts in limiter,
+		// skip limiter
+		requestContextValuesDefinedInLimiter := false
+
+		for contextKey := range lmtContextValues {
+			reqContextValue := fmt.Sprintf("%v", r.Context().Value(contextKey))
+			if reqContextValue != "" {
+				requestContextValuesDefinedInLimiter = true
+				break
+			}
+		}
+
+		if !requestContextValuesDefinedInLimiter {
+			return true
+		}
+
+		// ------------------------------
+		// If request contains the context key but not the values,
+		// skip limiter
+		requestContextValuesDefinedInLimiter = false
+
+		for contextKey, contextValues := range lmtContextValues {
+			for _, contextValue := range contextValues {
+				if r.Header.Get(contextKey) == contextValue {
+					requestContextValuesDefinedInLimiter = true
+					break
+				}
+			}
+		}
+
+		if !requestContextValuesDefinedInLimiter {
+			return true
+		}
+	}
+
+	// ---------------------------------
 	// Filter by basic auth usernames
-	// lmtBasicAuthUsers := lmt.GetBasicAuthUsers()
-	// lmtBasicAuthUsersIsSet := len(lmtBasicAuthUsers) > 0
+	lmtBasicAuthUsers := lmt.GetBasicAuthUsers()
+	lmtBasicAuthUsersIsSet := len(lmtBasicAuthUsers) > 0
 
-	// requestAuthUsernameDefinedInLimiter := false
+	if lmtBasicAuthUsersIsSet {
+		// If request does not contain all of the basic auth users in limiter,
+		// skip limiter
+		requestAuthUsernameDefinedInLimiter := false
 
-	// if lmtBasicAuthUsersIsSet {
-	// 	username, _, ok := r.BasicAuth()
-	// 	if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
-	// 		requestAuthUsernameDefinedInLimiter = true
-	// 	}
-	// }
+		username, _, ok := r.BasicAuth()
+		if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
+			requestAuthUsernameDefinedInLimiter = true
+		}
 
-	// if !requestAuthUsernameDefinedInLimiter {
-	// 	return true
-	// }
+		if !requestAuthUsernameDefinedInLimiter {
+			return true
+		}
+	}
 
 	return false
 }
@@ -173,8 +218,6 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 				}
 			}
 		}
-	} else {
-		// headerValuesToLimit = append(headerValuesToLimit, []string{"", ""})
 	}
 
 	contextValuesToLimit := [][]string{}
@@ -186,11 +229,11 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 			}
 
 			if len(contextValues) == 0 {
-				// If header values are empty, rate-limit all request containing headerKey.
+				// If context values are empty, rate-limit all request containing contextKey.
 				contextValuesToLimit = append(contextValuesToLimit, []string{contextKey, reqContextValue})
 
 			} else {
-				// If header values are not empty, rate-limit all request with headerKey and headerValues.
+				// If context values are not empty, rate-limit all request with contextKey and contextValues.
 				for _, contextValue := range contextValues {
 					if reqContextValue == contextValue {
 						contextValuesToLimit = append(contextValuesToLimit, []string{contextKey, contextValue})
@@ -199,8 +242,6 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 				}
 			}
 		}
-	} else {
-		// contextValuesToLimit = append(contextValuesToLimit, []string{"", ""})
 	}
 
 	sliceKey := []string{remoteIP, path}
@@ -220,10 +261,6 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 	sliceKey = append(sliceKey, usernameToLimit)
 
 	sliceKeys = append(sliceKeys, sliceKey)
-
-	for _, k := range sliceKeys {
-		println(strings.Join(k, " "))
-	}
 
 	return sliceKeys
 }

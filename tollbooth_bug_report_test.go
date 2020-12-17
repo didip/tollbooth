@@ -174,7 +174,9 @@ func Test_Issue91_BrokenSetMethod_BlockPost(t *testing.T) {
 	lmt.SetMethods([]string{"POST"})
 
 	limitReachedCounter := 0
-	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) { limitReachedCounter++ })
+	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) {
+		limitReachedCounter++
+	})
 
 	methods := lmt.GetMethods()
 	if methods[0] != "POST" {
