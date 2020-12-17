@@ -246,9 +246,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 
 	sliceKey := []string{remoteIP, path}
 
-	for _, method := range lmtMethods {
-		sliceKey = append(sliceKey, method)
-	}
+	sliceKey = append(sliceKey, lmtMethods...)
 
 	for _, header := range headerValuesToLimit {
 		sliceKey = append(sliceKey, header[0], header[1])
