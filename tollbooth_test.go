@@ -56,6 +56,26 @@ func TestDefaultBuildKeys(t *testing.T) {
 	}
 }
 
+func TestIgnoreURLBuildKeys(t *testing.T) {
+	lmt := NewLimiter(1, nil)
+	lmt.SetIgnoreURL(true)
+
+	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
+	if err != nil {
+		t.Errorf("Unable to create new HTTP request. Error: %v", err)
+	}
+
+	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+
+	for _, keys := range BuildKeys(lmt, request) {
+		for i, keyChunk := range keys {
+			if i == 0 && keyChunk != request.Header.Get("X-Real-IP") {
+				t.Errorf("The (%v) chunk should be remote IP. KeyChunk: %v", i+1, keyChunk)
+			}
+		}
+	}
+}
+
 func TestBasicAuthBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil)
 	lmt.SetBasicAuthUsers([]string{"bro"})
