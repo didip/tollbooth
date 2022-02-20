@@ -40,6 +40,7 @@ func TestDefaultBuildKeys(t *testing.T) {
 	}
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	expectedIP := "2601:7:1c82:4097::"
 
 	sliceKeys := BuildKeys(lmt, request)
 	if len(sliceKeys) == 0 {
@@ -48,7 +49,7 @@ func TestDefaultBuildKeys(t *testing.T) {
 
 	for _, keys := range sliceKeys {
 		expectedKeys := [][]string{
-			{request.Header.Get("X-Real-IP")},
+			{expectedIP},
 			{request.URL.Path},
 		}
 
@@ -65,7 +66,7 @@ func TestIgnoreURLBuildKeys(t *testing.T) {
 		t.Errorf("Unable to create new HTTP request. Error: %v", err)
 	}
 
-	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	request.Header.Set("X-Real-IP", "172.217.0.46")
 
 	for _, keys := range BuildKeys(lmt, request) {
 		for i, keyChunk := range keys {
@@ -86,6 +87,7 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 	}
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	expectedIP := "2601:7:1c82:4097::"
 
 	request.SetBasicAuth("bro", "tato")
 
@@ -96,7 +98,7 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 
 	for _, keys := range sliceKeys {
 		expectedKeys := [][]string{
-			{request.Header.Get("X-Real-IP")},
+			{expectedIP},
 			{request.URL.Path},
 			{"bro"},
 		}
@@ -114,7 +116,7 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 		t.Errorf("Unable to create new HTTP request. Error: %v", err)
 	}
 
-	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	request.Header.Set("X-Real-IP", "172.217.0.46")
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 
 	sliceKeys := BuildKeys(lmt, request)
@@ -144,6 +146,7 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 	}
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	expectedIP := "2601:7:1c82:4097::"
 
 	sliceKeys := BuildKeys(lmt, request)
 	if len(sliceKeys) == 0 {
@@ -152,7 +155,7 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 
 	for _, keys := range sliceKeys {
 		expectedKeys := [][]string{
-			{request.Header.Get("X-Real-IP")},
+			{expectedIP},
 			{request.URL.Path},
 			{"GET"},
 		}
@@ -170,7 +173,7 @@ func TestContextValueBuildKeys(t *testing.T) {
 		t.Errorf("Unable to create new HTTP request. Error: %v", err)
 	}
 
-	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	request.Header.Set("X-Real-IP", "172.217.0.46")
 	//nolint:golint,staticcheck // limiter.SetContextValue requires string as a key, so we have to live with that
 	request = request.WithContext(context.WithValue(request.Context(), "API-access-level", "basic"))
 
@@ -202,6 +205,7 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 	}
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	expectedIP := "2601:7:1c82:4097::"
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 
 	sliceKeys := BuildKeys(lmt, request)
@@ -211,7 +215,7 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 
 	for _, keys := range sliceKeys {
 		expectedKeys := [][]string{
-			{request.Header.Get("X-Real-IP")},
+			{expectedIP},
 			{request.URL.Path},
 			{"GET"},
 			{"X-Auth-Token"},
@@ -232,7 +236,7 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 		t.Errorf("Unable to create new HTTP request. Error: %v", err)
 	}
 
-	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	request.Header.Set("X-Real-IP", "172.217.0.46")
 	request.SetBasicAuth("bro", "tato")
 
 	sliceKeys := BuildKeys(lmt, request)
@@ -264,6 +268,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 	}
 
 	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	expectedIP := "2601:7:1c82:4097::"
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 	request.SetBasicAuth("bro", "tato")
 
@@ -274,7 +279,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 
 	for _, keys := range sliceKeys {
 		expectedKeys := [][]string{
-			{request.Header.Get("X-Real-IP")},
+			{expectedIP},
 			{request.URL.Path},
 			{"GET"},
 			{"X-Auth-Token"},
@@ -298,7 +303,7 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersAndContextValuesBuildKeys(t 
 		t.Errorf("Unable to create new HTTP request. Error: %v", err)
 	}
 
-	request.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	request.Header.Set("X-Real-IP", "172.217.0.46")
 	request.Header.Set("X-Auth-Token", "totally-top-secret")
 	request.SetBasicAuth("bro", "tato")
 	//nolint:golint,staticcheck // limiter.SetContextValue requires string as a key, so we have to live with that
@@ -353,6 +358,9 @@ func TestLimitHandler(t *testing.T) {
 
 	ch := make(chan int)
 	go func() {
+		// Different address, same /64 prefix
+		req.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c9")
+
 		rr := httptest.NewRecorder()
 		handler.ServeHTTP(rr, req)
 		// Should be limited
@@ -391,7 +399,7 @@ func TestOverrideForResponseWriter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	req.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	req.Header.Set("X-Real-IP", "172.217.0.46")
 
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
