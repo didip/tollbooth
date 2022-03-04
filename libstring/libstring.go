@@ -73,7 +73,6 @@ func CanonicalizeIP(ip string) string {
 		case ':':
 			// IPv6
 			isIPv6 = true
-			break
 		}
 	}
 	if !isIPv6 {

@@ -79,11 +79,6 @@ type Limiter struct {
 	// An option to write back what you want upon reaching a limit.
 	overrideDefaultResponseWriter bool
 
-	// List of places to look up IP address.
-	// Default is "RemoteAddr", "X-Forwarded-For", "X-Real-IP".
-	// You can rearrange the order as you like.
-	ipLookups []string
-
 	// Explicitly define how to look up IP address.
 	// This is intended to  replace ipLookups
 	explicitIPLookup IPLookup
