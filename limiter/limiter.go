@@ -45,6 +45,7 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 type IPLookup struct {
 	// The name of lookup method.
 	// Possible options are: RemoteAddr, X-Forwarded-For, X-Real-IP, CF-Connecting-IP
+	// All other headers are considered unknown and will be ignored.
 	Name string
 
 	// If there are multiple of the same header, this index determines which one to use.
