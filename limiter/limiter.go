@@ -18,7 +18,6 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 		SetMessage("You have reached maximum request limit.").
 		SetStatusCode(429).
 		SetOnLimitReached(nil).
-		SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
 		SetForwardedForIndexFromBehind(0).
 		SetHeaders(make(map[string][]string)).
 		SetContextValues(make(map[string][]string)).
@@ -40,6 +39,21 @@ func New(generalExpirableOptions *ExpirableOptions) *Limiter {
 	lmt.basicAuthUsers, _ = cache.NewCache(cache.TTL(lmt.generalExpirableOptions.DefaultExpirationTTL))
 
 	return lmt
+}
+
+// IPLookup is a config struct to define how users want to pick the remote IP address.
+type IPLookup struct {
+	// The name of lookup method.
+	// Possible options are: RemoteAddr, X-Forwarded-For, X-Real-IP, CF-Connecting-IP
+	Name string
+
+	// If there are multiple of the same header, this index determines which one to use.
+	// The index goes from right to left.
+	HeaderIndexFromRight int
+
+	// The index position to pick the ip address from a comma separated list.
+	// The index goes from right to left.
+	IndexFromRight int
 }
 
 // Limiter is a config struct to limit a particular request handler.
@@ -69,6 +83,10 @@ type Limiter struct {
 	// Default is "RemoteAddr", "X-Forwarded-For", "X-Real-IP".
 	// You can rearrange the order as you like.
 	ipLookups []string
+
+	// Explicitly define how to look up IP address.
+	// This is intended to  replace ipLookups
+	explicitIPLookup IPLookup
 
 	forwardedForIndex int
 
@@ -269,10 +287,12 @@ func (l *Limiter) ExecOnLimitReached(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetOverrideDefaultResponseWriter is a thread-safe way of setting the response writer override variable.
-func (l *Limiter) SetOverrideDefaultResponseWriter(override bool) {
+func (l *Limiter) SetOverrideDefaultResponseWriter(override bool) *Limiter {
 	l.Lock()
 	l.overrideDefaultResponseWriter = override
 	l.Unlock()
+
+	return l
 }
 
 // GetOverrideDefaultResponseWriter is a thread-safe way of getting the response writer override variable.
@@ -282,20 +302,22 @@ func (l *Limiter) GetOverrideDefaultResponseWriter() bool {
 	return l.overrideDefaultResponseWriter
 }
 
-// SetIPLookups is thread-safe way of setting list of places to look up IP address.
-func (l *Limiter) SetIPLookups(ipLookups []string) *Limiter {
+// SetIPLookup is thread-safe way of setting an explicit way to look up IP address.
+// This method is intended to replace SetIPLookups (version 6 or older).
+func (l *Limiter) SetIPLookup(lookup IPLookup) *Limiter {
 	l.Lock()
-	l.ipLookups = ipLookups
+	l.explicitIPLookup = lookup
 	l.Unlock()
 
 	return l
 }
 
-// GetIPLookups is thread-safe way of getting list of places to look up IP address.
-func (l *Limiter) GetIPLookups() []string {
+// GetIPLookup is thread-safe way of getting an explicit way to look up IP address.
+// This method is intended to replace the old GetIPLookups (version 6 or older).
+func (l *Limiter) GetIPLookup() IPLookup {
 	l.RLock()
 	defer l.RUnlock()
-	return l.ipLookups
+	return l.explicitIPLookup
 }
 
 // SetIgnoreURL is thread-safe way of setting whenever ignore the URL on rate limit keys
