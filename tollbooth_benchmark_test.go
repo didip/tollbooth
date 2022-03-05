@@ -31,9 +31,8 @@ func BenchmarkLimitByKeysWithExpiringBuckets(b *testing.B) {
 func BenchmarkBuildKeys(b *testing.B) {
 	lmt := limiter.New(nil).SetMax(1) // Only 1 request per second is allowed.
 	lmt.SetIPLookup(limiter.IPLookup{
-		Name:                 "X-Real-IP",
-		HeaderIndexFromRight: 0,
-		IndexFromRight:       0,
+		Name:           "X-Real-IP",
+		IndexFromRight: 0,
 	}).
 		SetHeaders(make(map[string][]string)).
 		SetHeader("X-Real-IP", []string{"2601:7:1c82:4097:59a0:a80b:2841:b8c8"})

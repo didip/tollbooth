@@ -33,9 +33,8 @@ func TestLimitByKeys(t *testing.T) {
 
 func TestDefaultBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil).SetIPLookup(limiter.IPLookup{
-		Name:                 "X-Real-IP",
-		HeaderIndexFromRight: 0,
-		IndexFromRight:       0,
+		Name:           "X-Real-IP",
+		IndexFromRight: 0,
 	})
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -64,9 +63,8 @@ func TestDefaultBuildKeys(t *testing.T) {
 func TestIgnoreURLBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetIgnoreURL(true)
 
@@ -89,9 +87,8 @@ func TestIgnoreURLBuildKeys(t *testing.T) {
 func TestBasicAuthBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetBasicAuthUsers([]string{"bro"})
 
@@ -124,9 +121,8 @@ func TestBasicAuthBuildKeys(t *testing.T) {
 func TestCustomHeadersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
 
@@ -158,9 +154,8 @@ func TestCustomHeadersBuildKeys(t *testing.T) {
 func TestRequestMethodBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetMethods([]string{"GET"})
 
@@ -191,9 +186,8 @@ func TestRequestMethodBuildKeys(t *testing.T) {
 func TestContextValueBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetContextValue("API-access-level", []string{"basic"})
 
@@ -226,9 +220,8 @@ func TestContextValueBuildKeys(t *testing.T) {
 func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetMethods([]string{"GET"}).
 		SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"})
@@ -263,9 +256,8 @@ func TestRequestMethodAndCustomHeadersBuildKeys(t *testing.T) {
 func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetMethods([]string{"GET"}).
 		SetBasicAuthUsers([]string{"bro"})
@@ -298,9 +290,8 @@ func TestRequestMethodAndBasicAuthUsersBuildKeys(t *testing.T) {
 func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetMethods([]string{"GET"}).
 		SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"}).
@@ -338,9 +329,8 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersBuildKeys(t *testing.T) {
 func TestRequestMethodCustomHeadersAndBasicAuthUsersAndContextValuesBuildKeys(t *testing.T) {
 	lmt := NewLimiter(1, nil).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetMethods([]string{"GET"}).
 		SetHeader("X-Auth-Token", []string{"totally-top-secret", "another-secret"}).
@@ -382,9 +372,8 @@ func TestRequestMethodCustomHeadersAndBasicAuthUsersAndContextValuesBuildKeys(t 
 func TestLimitHandler(t *testing.T) {
 	lmt := limiter.New(nil).SetMax(1).SetBurst(1).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetMethods([]string{"POST"})
 
@@ -432,9 +421,8 @@ func TestLimitHandler(t *testing.T) {
 func TestOverrideForResponseWriter(t *testing.T) {
 	lmt := limiter.New(nil).SetMax(1).SetBurst(1).
 		SetIPLookup(limiter.IPLookup{
-			Name:                 "X-Real-IP",
-			HeaderIndexFromRight: 0,
-			IndexFromRight:       0,
+			Name:           "X-Real-IP",
+			IndexFromRight: 0,
 		}).
 		SetMethods([]string{"POST"}).
 		SetOverrideDefaultResponseWriter(true)

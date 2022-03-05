@@ -26,9 +26,8 @@ func TestRemoteIPForwardedFor(t *testing.T) {
 	request.Header.Set("X-Real-IP", ipv6)
 
 	ip := RemoteIPFromIPLookup(limiter.IPLookup{
-		Name:                 "X-Forwarded-For",
-		HeaderIndexFromRight: 0,
-		IndexFromRight:       0,
+		Name:           "X-Forwarded-For",
+		IndexFromRight: 0,
 	}, request)
 
 	if ip != "10.10.10.10" {
@@ -51,9 +50,8 @@ func TestRemoteIPRealIP(t *testing.T) {
 	request.Header.Set("X-Real-IP", ipv6)
 
 	ip := RemoteIPFromIPLookup(limiter.IPLookup{
-		Name:                 "X-Real-IP",
-		HeaderIndexFromRight: 0,
-		IndexFromRight:       0,
+		Name:           "X-Real-IP",
+		IndexFromRight: 0,
 	}, request)
 
 	if ip != ipv6 {
@@ -73,9 +71,8 @@ func TestRemoteIPMultipleForwardedForIPAddresses(t *testing.T) {
 	request.Header.Set("X-Forwarded-For", "10.10.10.10,10.10.10.11")
 
 	ip := RemoteIPFromIPLookup(limiter.IPLookup{
-		Name:                 "X-Forwarded-For",
-		HeaderIndexFromRight: 0,
-		IndexFromRight:       0,
+		Name:           "X-Forwarded-For",
+		IndexFromRight: 0,
 	}, request)
 
 	// Should get the last one
@@ -84,9 +81,8 @@ func TestRemoteIPMultipleForwardedForIPAddresses(t *testing.T) {
 	}
 
 	ip = RemoteIPFromIPLookup(limiter.IPLookup{
-		Name:                 "X-Forwarded-For",
-		HeaderIndexFromRight: 0,
-		IndexFromRight:       1,
+		Name:           "X-Forwarded-For",
+		IndexFromRight: 1,
 	}, request)
 
 	// Should get the 2nd from last
@@ -96,9 +92,8 @@ func TestRemoteIPMultipleForwardedForIPAddresses(t *testing.T) {
 
 	// What about index out of bound? RemoteIP should simply choose index 0.
 	ip = RemoteIPFromIPLookup(limiter.IPLookup{
-		Name:                 "X-Forwarded-For",
-		HeaderIndexFromRight: 0,
-		IndexFromRight:       2,
+		Name:           "X-Forwarded-For",
+		IndexFromRight: 2,
 	}, request)
 
 	if ip != "10.10.10.10" {
@@ -116,35 +111,12 @@ func TestRemoteIPMultipleForwardedForHeaders(t *testing.T) {
 	request.Header.Add("X-Forwarded-For", "10.10.10.10,10.10.10.11")
 
 	ip := RemoteIPFromIPLookup(limiter.IPLookup{
-		Name:                 "X-Forwarded-For",
-		HeaderIndexFromRight: 0,
-		IndexFromRight:       0,
+		Name:           "X-Forwarded-For",
+		IndexFromRight: 0,
 	}, request)
 
 	// Should get the last header and the last IP
 	if ip != "10.10.10.11" {
-		t.Errorf("Did not get the right IP. IP: %v", ip)
-	}
-
-	ip = RemoteIPFromIPLookup(limiter.IPLookup{
-		Name:                 "X-Forwarded-For",
-		HeaderIndexFromRight: 1,
-		IndexFromRight:       0,
-	}, request)
-
-	// Should get the last IP from the first header
-	if ip != "8.8.4.4" {
-		t.Errorf("Did not get the right IP. IP: %v", ip)
-	}
-
-	ip = RemoteIPFromIPLookup(limiter.IPLookup{
-		Name:                 "X-Forwarded-For",
-		HeaderIndexFromRight: 1,
-		IndexFromRight:       1,
-	}, request)
-
-	// Should get the first IP from the first header
-	if ip != "8.8.8.8" {
 		t.Errorf("Did not get the right IP. IP: %v", ip)
 	}
 }

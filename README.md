@@ -47,9 +47,8 @@ func main() {
 
     // New in version >= 7, you must explicitly define how to pick the IP address.
     lmt.SetIPLookup(limiter.IPLookup{
-        Name:                 "X-Real-IP",
-        HeaderIndexFromRight: 0,
-        IndexFromRight:       0,
+        Name:           "X-Real-IP",
+        IndexFromRight: 0,
     })
 
     http.Handle("/", tollbooth.LimitFuncHandler(lmt, HelloHandler))
@@ -82,15 +81,15 @@ func main() {
         // The name of lookup method.
         // Possible options are: RemoteAddr, X-Forwarded-For, X-Real-IP, CF-Connecting-IP
         // All other headers are considered unknown and will be ignored.
-        Name:                 "X-Real-IP",
-
-        // If there are multiple of the same header, this index determines which one to use.
-        // The index goes from right to left.
-        HeaderIndexFromRight: 0,
+        Name:            "X-Real-IP",
 
         // The index position to pick the ip address from a comma separated list.
         // The index goes from right to left.
-        IndexFromRight:       0,
+        //
+        // When there are multiple of the same headers,
+        // we will concat them together in the order of first to last seen.
+        // And then we pick the IP using this index position.
+        IndexFromRight: 0,
     })
 
     // In version >= 7, lmt.SetIPLookups and lmt.GetIPLookups are removed.
@@ -155,9 +154,8 @@ func main() {
 
     // New in version >= 7, you must explicitly define how to pick the IP address.
     lmt.SetIPLookup(limiter.IPLookup{
-        Name:                 "X-Forwarded-For",
-        HeaderIndexFromRight: 0,
-        IndexFromRight:       0,
+        Name:           "X-Forwarded-For",
+        IndexFromRight: 0,
     })
 
     // Set a custom message.

@@ -48,10 +48,6 @@ type IPLookup struct {
 	// All other headers are considered unknown and will be ignored.
 	Name string
 
-	// If there are multiple of the same header, this index determines which one to use.
-	// The index goes from right to left.
-	HeaderIndexFromRight int
-
 	// The index position to pick the ip address from a comma separated list.
 	// The index goes from right to left.
 	IndexFromRight int

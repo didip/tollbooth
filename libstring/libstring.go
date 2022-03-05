@@ -35,12 +35,7 @@ func RemoteIPFromIPLookup(ipLookup limiter.IPLookup, r *http.Request) string {
 	case "X-Forwarded-For", "X-Real-IP", "CF-Connecting-IP":
 		ipAddrListCommaSeparated := r.Header.Values(ipLookup.Name)
 
-		headerIndex := len(ipAddrListCommaSeparated) - 1 - ipLookup.HeaderIndexFromRight
-		if headerIndex < 0 {
-			headerIndex = 0
-		}
-
-		ipAddrCommaSeparated := ipAddrListCommaSeparated[headerIndex]
+		ipAddrCommaSeparated := strings.Join(ipAddrListCommaSeparated, ",")
 
 		ips := strings.Split(ipAddrCommaSeparated, ",")
 		for i, p := range ips {
