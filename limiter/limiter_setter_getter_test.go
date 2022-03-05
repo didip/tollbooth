@@ -43,19 +43,6 @@ func TestSetGetStatusCode(t *testing.T) {
 	}
 }
 
-func TestSetGetIPLookups(t *testing.T) {
-	lmt := New(nil).SetMax(1)
-
-	// Check default
-	if len(lmt.GetIPLookups()) != 3 {
-		t.Errorf("IPLookups field is incorrect. Value: %v", lmt.GetIPLookups())
-	}
-
-	if lmt.SetIPLookups([]string{"X-Real-IP"}).GetIPLookups()[0] != "X-Real-IP" {
-		t.Errorf("IPLookups field is incorrect. Value: %v", lmt.GetIPLookups())
-	}
-}
-
 func TestSetGetMethods(t *testing.T) {
 	lmt := New(nil).SetMax(1)
 

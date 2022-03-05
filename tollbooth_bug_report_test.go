@@ -59,7 +59,10 @@ Top:
 var issue66HeaderKey = "X-Customer-ID"
 
 func issue66RateLimiter(h http.HandlerFunc, customerIDs []string) (http.HandlerFunc, *limiter.Limiter) {
-	allocationLimiter := NewLimiter(1, nil).SetMethods([]string{"POST"})
+	allocationLimiter := NewLimiter(1, nil).SetMethods([]string{"POST"}).
+		SetIPLookup(limiter.IPLookup{
+			Name: "RemoteAddr",
+		})
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		allocationLimiter.SetHeader(issue66HeaderKey, customerIDs)
@@ -135,8 +138,7 @@ Expected to receive: %v status code. Got: %v`,
 func Test_Issue91_BrokenSetMethod_DontBlockGet(t *testing.T) {
 	requestsPerSecond := float64(1)
 
-	lmt := NewLimiter(requestsPerSecond, nil)
-	lmt.SetMethods([]string{"POST"})
+	lmt := NewLimiter(requestsPerSecond, nil).SetMethods([]string{"POST"})
 
 	methods := lmt.GetMethods()
 	if methods[0] != "POST" {
@@ -170,8 +172,10 @@ func Test_Issue91_BrokenSetMethod_DontBlockGet(t *testing.T) {
 func Test_Issue91_BrokenSetMethod_BlockPost(t *testing.T) {
 	requestsPerSecond := float64(1)
 
-	lmt := NewLimiter(requestsPerSecond, nil)
-	lmt.SetMethods([]string{"POST"})
+	lmt := NewLimiter(requestsPerSecond, nil).SetMethods([]string{"POST"}).
+		SetIPLookup(limiter.IPLookup{
+			Name: "RemoteAddr",
+		})
 
 	limitReachedCounter := 0
 	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) {
