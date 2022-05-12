@@ -94,6 +94,14 @@ func (lim *Limiter) Allow() bool {
 	return lim.AllowN(time.Now(), 1)
 }
 
+// TokensAt returns the number of tokens available for the given time.
+func (lim *Limiter) TokensAt(t time.Time) float64 {
+	lim.mu.Lock()
+	_, _, tokens := lim.advance(t) // does not mutate lim
+	lim.mu.Unlock()
+	return tokens
+}
+
 // AllowN reports whether n events may happen at time now.
 // Use this method if you intend to drop / skip events that exceed the rate limit.
 // Otherwise use Reserve or Wait.

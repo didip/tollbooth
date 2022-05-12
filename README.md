@@ -122,6 +122,13 @@ func main() {
 
     * `X-Rate-Limit-Request-Remote-Addr` The rejected request `RemoteAddr`.
 
+   Upon both success and rejection [RateLimit](https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-ratelimit-headers) headers are sent:
+
+   * `RateLimit-Limit` The maximum request limit within the time window (1s).
+
+   * `RateLimit-Reset` The rate-limiter time window duration in seconds (always 1s).
+
+   * `RateLimit-Remaining` The remaining tokens.
 
 5. Customize your own message or function when limit is reached.
 
