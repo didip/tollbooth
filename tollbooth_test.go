@@ -355,6 +355,16 @@ func TestLimitHandler(t *testing.T) {
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
+	// check RateLimit headers
+	if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Limit")]; len(value) < 1 || value[0] != "1" {
+		t.Errorf("handler returned wrong value: got %s want %s", value, "1")
+	}
+	if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Reset")]; len(value) < 1 || value[0] != "1" {
+		t.Errorf("handler returned wrong value: got %s want %s", value, "1")
+	}
+	if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Remaining")]; len(value) < 1 || value[0] != "0" {
+		t.Errorf("handler returned wrong value: got %s want %s", value, "0")
+	}
 
 	ch := make(chan int)
 	go func() {
@@ -366,6 +376,23 @@ func TestLimitHandler(t *testing.T) {
 		// Should be limited
 		if status := rr.Code; status != http.StatusTooManyRequests {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusTooManyRequests)
+		}
+		// check X-Rate-Limit headers
+		if value := rr.Result().Header[http.CanonicalHeaderKey("X-Rate-Limit-Limit")]; len(value) < 1 || value[0] != "1.00" {
+			t.Errorf("X-Rate-Limit-Limit has wrong value: got %s want %v", value, "1.00")
+		}
+		if value := rr.Result().Header[http.CanonicalHeaderKey("X-Rate-Limit-Duration")]; len(value) < 1 || value[0] != "1" {
+			t.Errorf("X-Rate-Limit-Duration has wrong value: got %s want %v", value, "1")
+		}
+		// check RateLimit headers
+		if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Limit")]; len(value) < 1 || value[0] != "1" {
+			t.Errorf("RateLimit-Limit has wrong value: got %s want %v", value, "1")
+		}
+		if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Reset")]; len(value) < 1 || value[0] != "1" {
+			t.Errorf("RateLimit-Reset has wrong value: got %s want %v", value, "1")
+		}
+		if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Remaining")]; len(value) < 1 || value[0] != "0" {
+			t.Errorf("RateLimit-Remaining has wrong value: got %s want %v", value, "0")
 		}
 		// OnLimitReached should be called
 		if counter != 1 {
