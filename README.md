@@ -23,6 +23,8 @@ This is a generic middleware to rate-limit HTTP requests.
 
 **v6.x.x:** Replaced `go-cache` with `github.com/go-pkgz/expirable-cache` because `go-cache` leaks goroutines.
 
+**v7.x.x:** Replaced `time/rate` with `embedded time/rate` so that we can support more rate limit headers.
+
 ## Five Minute Tutorial
 
 ```go
