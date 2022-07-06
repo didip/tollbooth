@@ -8,7 +8,7 @@ import (
 
 	cache "github.com/go-pkgz/expirable-cache"
 
-	"github.com/didip/tollbooth/v6/internal/time/rate"
+	"github.com/didip/tollbooth/v7/internal/time/rate"
 )
 
 // New is a constructor for Limiter.

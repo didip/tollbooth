@@ -33,7 +33,7 @@ package main
 import (
     "net/http"
 
-    "github.com/didip/tollbooth/v6"
+    "github.com/didip/tollbooth/v7"
 )
 
 func HelloHandler(w http.ResponseWriter, req *http.Request) {
@@ -54,8 +54,8 @@ func main() {
     import (
         "time"
     
-        "github.com/didip/tollbooth/v6"
-        "github.com/didip/tollbooth/v6/limiter"
+        "github.com/didip/tollbooth/v7"
+        "github.com/didip/tollbooth/v7/limiter"
     )
 
     lmt := tollbooth.NewLimiter(1, nil)

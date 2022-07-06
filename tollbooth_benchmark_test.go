@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/didip/tollbooth/v6/limiter"
+	"github.com/didip/tollbooth/v7/limiter"
 )
 
 func BenchmarkLimitByKeys(b *testing.B) {
