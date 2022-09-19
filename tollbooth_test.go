@@ -489,7 +489,7 @@ func isInSlice(key string, keys []string) bool {
 	return false
 }
 
-func TestLimitHandlerWithEmptyHeader(t *testing.T) {
+func TestLimitHandlerWithEmptyHeaderEntry(t *testing.T) {
 	lmt := limiter.New(nil).SetMax(1).SetBurst(1)
 	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
 	lmt.SetMethods([]string{"POST"})
