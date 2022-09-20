@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -490,24 +489,44 @@ func isInSlice(key string, keys []string) bool {
 	return false
 }
 
+type LockMap struct {
+	m map[string]int64
+	sync.Mutex
+}
+
+func (lm *LockMap) Set(key string, value int64) {
+	lm.Lock()
+	lm.m[key] = value
+	lm.Unlock()
+}
+
+func (lm *LockMap) Get(key string) (int64, bool) {
+	lm.Lock()
+	value, ok := lm.m[key]
+	lm.Unlock()
+	return value, ok
+}
+
+func (lm *LockMap) Add(key string, incr int64) {
+	lm.Lock()
+	if val, ok := lm.m[key]; ok {
+		lm.m[key] = val + incr
+	} else {
+		lm.m[key] = incr
+	}
+	lm.Unlock()
+}
+
 func TestLimitHandlerWithEmptyHeaderEntry(t *testing.T) {
 	lmt := limiter.New(nil).SetMax(1).SetBurst(1)
 	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
 	lmt.SetMethods([]string{"POST"})
 	lmt.SetHeader("user_id", []string{})
 
-	// counter := map[string]*atomic.Int64{}
-	counterMap := sync.Map{}
+	counterMap := &LockMap{m: map[string]int64{}}
 	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w, r
-		aint, ok := counterMap.Load(r.Header.Get("user_id"))
-		if ok {
-			aint.(*atomic.Int64).Add(1)
-		} else {
-			tmp := &atomic.Int64{}
-			tmp.Store(1)
-			counterMap.Store(r.Header.Get("user_id"), tmp)
-		}
+		counterMap.Add(r.Header.Get("user_id"), 1)
 	})
 
 	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -576,8 +595,8 @@ func TestLimitHandlerWithEmptyHeaderEntry(t *testing.T) {
 				t.Errorf("RateLimit-Remaining has wrong value: got %s want %v", value, "0")
 			}
 			// OnLimitReached should be called
-			if aint, ok := counterMap.Load(req1.Header.Get("user_id")); ok {
-				if aint.(*atomic.Int64).Load() == 0 {
+			if aint, ok := counterMap.Get(req1.Header.Get("user_id")); ok {
+				if aint == 0 {
 					t.Errorf("onLimitReached was not called")
 				}
 			}
@@ -616,8 +635,8 @@ func TestLimitHandlerWithEmptyHeaderEntry(t *testing.T) {
 				t.Errorf("RateLimit-Remaining has wrong value: got %s want %v", value, "0")
 			}
 			// OnLimitReached should be called
-			if aint, ok := counterMap.Load(req2.Header.Get("user_id")); ok {
-				if aint.(*atomic.Int64).Load() != 0 {
+			if aint, ok := counterMap.Get(req2.Header.Get("user_id")); ok {
+				if aint != 0 {
 					t.Errorf("onLimitReached was called")
 				}
 			}
