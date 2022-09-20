@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -495,8 +496,19 @@ func TestLimitHandlerWithEmptyHeaderEntry(t *testing.T) {
 	lmt.SetMethods([]string{"POST"})
 	lmt.SetHeader("user_id", []string{})
 
-	counter := 0
-	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) { _, _ = w, r; counter++ })
+	// counter := map[string]*atomic.Int64{}
+	counterMap := sync.Map{}
+	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w, r
+		aint, ok := counterMap.Load(r.Header.Get("user_id"))
+		if ok {
+			aint.(*atomic.Int64).Add(1)
+		} else {
+			tmp := &atomic.Int64{}
+			tmp.Store(1)
+			counterMap.Store(r.Header.Get("user_id"), tmp)
+		}
+	})
 
 	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = r
@@ -536,8 +548,11 @@ func TestLimitHandlerWithEmptyHeaderEntry(t *testing.T) {
 	go func() {
 		defer wg.Done()
 
+		req1, _ := http.NewRequest("POST", "/doesntmatter", nil)
+		req1.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+		req1.Header.Set("user_id", "0")
 		rr := httptest.NewRecorder()
-		handler.ServeHTTP(rr, req)
+		handler.ServeHTTP(rr, req1)
 		// Should be limited
 		{
 			if status := rr.Code; status != http.StatusTooManyRequests {
@@ -561,8 +576,10 @@ func TestLimitHandlerWithEmptyHeaderEntry(t *testing.T) {
 				t.Errorf("RateLimit-Remaining has wrong value: got %s want %v", value, "0")
 			}
 			// OnLimitReached should be called
-			if counter != 1 {
-				t.Errorf("onLimitReached was not called")
+			if aint, ok := counterMap.Load(req1.Header.Get("user_id")); ok {
+				if aint.(*atomic.Int64).Load() == 0 {
+					t.Errorf("onLimitReached was not called")
+				}
 			}
 		}
 	}()
@@ -571,35 +588,39 @@ func TestLimitHandlerWithEmptyHeaderEntry(t *testing.T) {
 	go func() {
 		defer wg.Done()
 
-		req.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
-		req.Header.Set("user_id", "1")
+		req2, _ := http.NewRequest("POST", "/doesntmatter", nil)
+		req2.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+		req2.Header.Set("user_id", "1")
 
 		rr := httptest.NewRecorder()
-		handler.ServeHTTP(rr, req)
-		// Should be limited
-		if status := rr.Code; status != http.StatusOK {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusTooManyRequests)
-		}
-		// check X-Rate-Limit headers
-		if value := rr.Result().Header[http.CanonicalHeaderKey("X-Rate-Limit-Limit")]; len(value) < 1 || value[0] != "1.00" {
-			t.Errorf("X-Rate-Limit-Limit has wrong value: got %s want %v", value, "1.00")
-		}
-		if value := rr.Result().Header[http.CanonicalHeaderKey("X-Rate-Limit-Duration")]; len(value) < 1 || value[0] != "1" {
-			t.Errorf("X-Rate-Limit-Duration has wrong value: got %s want %v", value, "1")
-		}
-		// check RateLimit headers
-		if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Limit")]; len(value) < 1 || value[0] != "1" {
-			t.Errorf("RateLimit-Limit has wrong value: got %s want %v", value, "1")
-		}
-		if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Reset")]; len(value) < 1 || value[0] != "1" {
-			t.Errorf("RateLimit-Reset has wrong value: got %s want %v", value, "1")
-		}
-		if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Remaining")]; len(value) < 1 || value[0] != "0" {
-			t.Errorf("RateLimit-Remaining has wrong value: got %s want %v", value, "0")
-		}
-		// OnLimitReached should be called
-		if counter != 0 {
-			t.Errorf("onLimitReached was called")
+		handler.ServeHTTP(rr, req2)
+		{ // Should be limited
+			if status := rr.Code; status != http.StatusOK {
+				t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusTooManyRequests)
+			}
+			// check X-Rate-Limit headers
+			if value := rr.Result().Header[http.CanonicalHeaderKey("X-Rate-Limit-Limit")]; len(value) < 1 || value[0] != "1.00" {
+				t.Errorf("X-Rate-Limit-Limit has wrong value: got %s want %v", value, "1.00")
+			}
+			if value := rr.Result().Header[http.CanonicalHeaderKey("X-Rate-Limit-Duration")]; len(value) < 1 || value[0] != "1" {
+				t.Errorf("X-Rate-Limit-Duration has wrong value: got %s want %v", value, "1")
+			}
+			// check RateLimit headers
+			if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Limit")]; len(value) < 1 || value[0] != "1" {
+				t.Errorf("RateLimit-Limit has wrong value: got %s want %v", value, "1")
+			}
+			if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Reset")]; len(value) < 1 || value[0] != "1" {
+				t.Errorf("RateLimit-Reset has wrong value: got %s want %v", value, "1")
+			}
+			if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Remaining")]; len(value) < 1 || value[0] != "0" {
+				t.Errorf("RateLimit-Remaining has wrong value: got %s want %v", value, "0")
+			}
+			// OnLimitReached should be called
+			if aint, ok := counterMap.Load(req2.Header.Get("user_id")); ok {
+				if aint.(*atomic.Int64).Load() != 0 {
+					t.Errorf("onLimitReached was called")
+				}
+			}
 		}
 	}()
 
