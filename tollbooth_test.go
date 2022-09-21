@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -486,4 +487,121 @@ func isInSlice(key string, keys []string) bool {
 		}
 	}
 	return false
+}
+
+type LockMap struct {
+	m map[string]int64
+	sync.Mutex
+}
+
+func (lm *LockMap) Set(key string, value int64) {
+	lm.Lock()
+	lm.m[key] = value
+	lm.Unlock()
+}
+
+func (lm *LockMap) Get(key string) (int64, bool) {
+	lm.Lock()
+	value, ok := lm.m[key]
+	lm.Unlock()
+	return value, ok
+}
+
+func (lm *LockMap) Add(key string, incr int64) {
+	lm.Lock()
+	if val, ok := lm.m[key]; ok {
+		lm.m[key] = val + incr
+	} else {
+		lm.m[key] = incr
+	}
+	lm.Unlock()
+}
+
+func TestLimitHandlerEmptyHeader(t *testing.T) {
+	lmt := limiter.New(nil).SetMax(1).SetBurst(1)
+	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
+	lmt.SetMethods([]string{"POST"})
+	lmt.SetHeader("user_id", []string{})
+
+	counterMap := &LockMap{m: map[string]int64{}}
+	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w, r
+		counterMap.Add(r.Header.Get("user_id"), 1)
+	})
+
+	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = r
+		w.Write([]byte(`hello world`))
+	}))
+
+	req, err := http.NewRequest("POST", "/doesntmatter", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+	req.Header.Set("user_id", "0")
+
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	{ // Should not be limited
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		}
+		// check RateLimit headers
+		if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Limit")]; len(value) < 1 || value[0] != "1" {
+			t.Errorf("handler returned wrong value: got %s want %s", value, "1")
+		}
+		if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Reset")]; len(value) < 1 || value[0] != "1" {
+			t.Errorf("handler returned wrong value: got %s want %s", value, "1")
+		}
+		if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Remaining")]; len(value) < 1 || value[0] != "0" {
+			t.Errorf("handler returned wrong value: got %s want %s", value, "0")
+		}
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	// same user_id, should be limited
+	go func() {
+		defer wg.Done()
+
+		req1, _ := http.NewRequest("POST", "/doesntmatter", nil)
+		req1.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
+		req1.Header.Set("user_id", "0")
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, req1)
+		// Should be limited
+		{
+			if status := rr.Code; status != http.StatusTooManyRequests {
+				t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusTooManyRequests)
+			}
+			// check X-Rate-Limit headers
+			if value := rr.Result().Header[http.CanonicalHeaderKey("X-Rate-Limit-Limit")]; len(value) < 1 || value[0] != "1.00" {
+				t.Errorf("X-Rate-Limit-Limit has wrong value: got %s want %v", value, "1.00")
+			}
+			if value := rr.Result().Header[http.CanonicalHeaderKey("X-Rate-Limit-Duration")]; len(value) < 1 || value[0] != "1" {
+				t.Errorf("X-Rate-Limit-Duration has wrong value: got %s want %v", value, "1")
+			}
+			// check RateLimit headers
+			if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Limit")]; len(value) < 1 || value[0] != "1" {
+				t.Errorf("RateLimit-Limit has wrong value: got %s want %v", value, "1")
+			}
+			if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Reset")]; len(value) < 1 || value[0] != "1" {
+				t.Errorf("RateLimit-Reset has wrong value: got %s want %v", value, "1")
+			}
+			if value := rr.Result().Header[http.CanonicalHeaderKey("RateLimit-Remaining")]; len(value) < 1 || value[0] != "0" {
+				t.Errorf("RateLimit-Remaining has wrong value: got %s want %v", value, "0")
+			}
+			// OnLimitReached should be called
+			if aint, ok := counterMap.Get(req1.Header.Get("user_id")); ok {
+				if aint == 0 {
+					t.Errorf("onLimitReached was not called")
+				}
+			}
+		}
+	}()
+
+	wg.Wait() // Block until go func is done.
 }
