@@ -517,7 +517,7 @@ func (lm *LockMap) Add(key string, incr int64) {
 	lm.Unlock()
 }
 
-func TestLimitHandlerWithEmptyHeaderEntry(t *testing.T) {
+func TestLimitHandlerEmptyHdrEntry(t *testing.T) {
 	lmt := limiter.New(nil).SetMax(1).SetBurst(1)
 	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
 	lmt.SetMethods([]string{"POST"})
