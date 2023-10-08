@@ -261,9 +261,9 @@ func (l *Limiter) SetOnLimitReached(fn func(w http.ResponseWriter, r *http.Reque
 // ExecOnLimitReached is thread-safe way of executing after-rejection function when limit is reached.
 func (l *Limiter) ExecOnLimitReached(w http.ResponseWriter, r *http.Request) {
 	l.RLock()
-	defer l.RUnlock()
-
 	fn := l.onLimitReached
+	l.RUnlock()
+
 	if fn != nil {
 		fn(w, r)
 	}
