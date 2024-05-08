@@ -337,9 +337,9 @@ func TestLimitHandler(t *testing.T) {
 	lmt.SetMethods([]string{"POST"})
 
 	counter := 0
-	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) { counter++ })
+	lmt.SetOnLimitReached(func(http.ResponseWriter, *http.Request) { counter++ })
 
-	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte(`hello world`))
 	}))
 
@@ -411,14 +411,14 @@ func TestOverrideForResponseWriter(t *testing.T) {
 	lmt.SetOverrideDefaultResponseWriter(true)
 
 	counter := 0
-	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) {
+	lmt.SetOnLimitReached(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotAcceptable)
 		w.Write([]byte("rejecting the large amount of requests"))
 		counter++
 	})
 
-	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte(`hello world`))
 	}))
 
