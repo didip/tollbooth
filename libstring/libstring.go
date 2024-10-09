@@ -5,6 +5,8 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/didip/tollbooth/v7/limiter"
 )
 
 // StringInSlice finds needle in a slice of strings.
@@ -17,38 +19,35 @@ func StringInSlice(sliceString []string, needle string) bool {
 	return false
 }
 
-// RemoteIP finds IP Address given http.Request struct.
-func RemoteIP(ipLookups []string, forwardedForIndexFromBehind int, r *http.Request) string {
-	realIP := r.Header.Get("X-Real-IP")
-	forwardedFor := r.Header.Get("X-Forwarded-For")
-
-	for _, lookup := range ipLookups {
-		if lookup == "RemoteAddr" {
-			// 1. Cover the basic use cases for both ipv4 and ipv6
-			ip, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				// 2. Upon error, just return the remote addr.
-				return r.RemoteAddr
-			}
-			return ip
+// RemoteIPFromIPLookup picks an ip address explicitly from limiter.IPLookup criteria.
+// This function is intended to replace RemoteIP function.
+func RemoteIPFromIPLookup(ipLookup limiter.IPLookup, r *http.Request) string {
+	switch ipLookup.Name {
+	case "RemoteAddr":
+		// 1. Cover the basic use cases for both ipv4 and ipv6
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			// 2. Upon error, just return the remote addr.
+			return r.RemoteAddr
 		}
-		if lookup == "X-Forwarded-For" && forwardedFor != "" {
-			// X-Forwarded-For is potentially a list of addresses separated with ","
-			parts := strings.Split(forwardedFor, ",")
-			for i, p := range parts {
-				parts[i] = strings.TrimSpace(p)
-			}
+		return ip
 
-			partIndex := len(parts) - 1 - forwardedForIndexFromBehind
-			if partIndex < 0 {
-				partIndex = 0
-			}
+	case "X-Forwarded-For", "X-Real-IP", "CF-Connecting-IP":
+		ipAddrListCommaSeparated := r.Header.Values(ipLookup.Name)
 
-			return parts[partIndex]
+		ipAddrCommaSeparated := strings.Join(ipAddrListCommaSeparated, ",")
+
+		ips := strings.Split(ipAddrCommaSeparated, ",")
+		for i, p := range ips {
+			ips[i] = strings.TrimSpace(p)
 		}
-		if lookup == "X-Real-IP" && realIP != "" {
-			return realIP
+
+		ipIndex := len(ips) - 1 - ipLookup.IndexFromRight
+		if ipIndex < 0 {
+			ipIndex = 0
 		}
+
+		return ips[ipIndex]
 	}
 
 	return ""

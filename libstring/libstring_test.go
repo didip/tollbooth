@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/didip/tollbooth/v7/limiter"
 )
 
 func TestStringInSlice(t *testing.T) {
@@ -12,28 +14,7 @@ func TestStringInSlice(t *testing.T) {
 	}
 }
 
-func TestRemoteIPDefault(t *testing.T) {
-	ipLookups := []string{"RemoteAddr", "X-Real-IP"}
-	ipv6 := "2601:7:1c82:4097:59a0:a80b:2841:b8c8"
-
-	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
-	if err != nil {
-		t.Errorf("Unable to create new HTTP request. Error: %v", err)
-	}
-
-	request.Header.Set("X-Real-IP", ipv6)
-
-	ip := RemoteIP(ipLookups, 0, request)
-	if ip != request.RemoteAddr {
-		t.Errorf("Did not get the right IP. IP: %v", ip)
-	}
-	if ip == ipv6 {
-		t.Errorf("X-Real-IP should have been skipped. IP: %v", ip)
-	}
-}
-
 func TestRemoteIPForwardedFor(t *testing.T) {
-	ipLookups := []string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"}
 	ipv6 := "2601:7:1c82:4097:59a0:a80b:2841:b8c8"
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -44,7 +25,11 @@ func TestRemoteIPForwardedFor(t *testing.T) {
 	request.Header.Set("X-Forwarded-For", "10.10.10.10")
 	request.Header.Set("X-Real-IP", ipv6)
 
-	ip := RemoteIP(ipLookups, 0, request)
+	ip := RemoteIPFromIPLookup(limiter.IPLookup{
+		Name:           "X-Forwarded-For",
+		IndexFromRight: 0,
+	}, request)
+
 	if ip != "10.10.10.10" {
 		t.Errorf("Did not get the right IP. IP: %v", ip)
 	}
@@ -54,7 +39,6 @@ func TestRemoteIPForwardedFor(t *testing.T) {
 }
 
 func TestRemoteIPRealIP(t *testing.T) {
-	ipLookups := []string{"X-Real-IP", "X-Forwarded-For", "RemoteAddr"}
 	ipv6 := "2601:7:1c82:4097:59a0:a80b:2841:b8c8"
 
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
@@ -65,7 +49,11 @@ func TestRemoteIPRealIP(t *testing.T) {
 	request.Header.Set("X-Forwarded-For", "10.10.10.10")
 	request.Header.Set("X-Real-IP", ipv6)
 
-	ip := RemoteIP(ipLookups, 0, request)
+	ip := RemoteIPFromIPLookup(limiter.IPLookup{
+		Name:           "X-Real-IP",
+		IndexFromRight: 0,
+	}, request)
+
 	if ip != ipv6 {
 		t.Errorf("Did not get the right IP. IP: %v", ip)
 	}
@@ -74,53 +62,64 @@ func TestRemoteIPRealIP(t *testing.T) {
 	}
 }
 
-func TestRemoteIPMultipleForwardedFor(t *testing.T) {
-	ipLookups := []string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"}
-	ipv6 := "2601:7:1c82:4097:59a0:a80b:2841:b8c8"
-
+func TestRemoteIPMultipleForwardedForIPAddresses(t *testing.T) {
 	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
 	if err != nil {
 		t.Errorf("Unable to create new HTTP request. Error: %v", err)
 	}
 
-	request.Header.Set("X-Real-IP", ipv6)
-
-	// Missing X-Forwarded-For should not break things
-	ip := RemoteIP(ipLookups, 0, request)
-	if ip != ipv6 {
-		t.Errorf("X-Real-IP should have been chosen because X-Forwarded-For is missing. IP: %v", ip)
-	}
-
 	request.Header.Set("X-Forwarded-For", "10.10.10.10,10.10.10.11")
 
+	ip := RemoteIPFromIPLookup(limiter.IPLookup{
+		Name:           "X-Forwarded-For",
+		IndexFromRight: 0,
+	}, request)
+
 	// Should get the last one
-	ip = RemoteIP(ipLookups, 0, request)
 	if ip != "10.10.10.11" {
 		t.Errorf("Did not get the right IP. IP: %v", ip)
 	}
-	if ip == ipv6 {
-		t.Errorf("X-Real-IP should have been skipped. IP: %v", ip)
-	}
+
+	ip = RemoteIPFromIPLookup(limiter.IPLookup{
+		Name:           "X-Forwarded-For",
+		IndexFromRight: 1,
+	}, request)
 
 	// Should get the 2nd from last
-	ip = RemoteIP(ipLookups, 1, request)
 	if ip != "10.10.10.10" {
 		t.Errorf("Did not get the right IP. IP: %v", ip)
-	}
-	if ip == ipv6 {
-		t.Errorf("X-Real-IP should have been skipped. IP: %v", ip)
 	}
 
 	// What about index out of bound? RemoteIP should simply choose index 0.
-	ip = RemoteIP(ipLookups, 2, request)
+	ip = RemoteIPFromIPLookup(limiter.IPLookup{
+		Name:           "X-Forwarded-For",
+		IndexFromRight: 2,
+	}, request)
+
 	if ip != "10.10.10.10" {
 		t.Errorf("Did not get the right IP. IP: %v", ip)
 	}
-	if ip == ipv6 {
-		t.Errorf("X-Real-IP should have been skipped. IP: %v", ip)
-	}
 }
 
+func TestRemoteIPMultipleForwardedForHeaders(t *testing.T) {
+	request, err := http.NewRequest("GET", "/", strings.NewReader("Hello, world!"))
+	if err != nil {
+		t.Errorf("Unable to create new HTTP request. Error: %v", err)
+	}
+
+	request.Header.Add("X-Forwarded-For", "8.8.8.8,8.8.4.4")
+	request.Header.Add("X-Forwarded-For", "10.10.10.10,10.10.10.11")
+
+	ip := RemoteIPFromIPLookup(limiter.IPLookup{
+		Name:           "X-Forwarded-For",
+		IndexFromRight: 0,
+	}, request)
+
+	// Should get the last header and the last IP
+	if ip != "10.10.10.11" {
+		t.Errorf("Did not get the right IP. IP: %v", ip)
+	}
+}
 func TestCanonicalizeIP(t *testing.T) {
 	tests := []struct {
 		name string
@@ -169,10 +168,12 @@ func TestCanonicalizeIP(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
+		ip := tt.ip
+		want := tt.want
+
 		t.Run(tt.name, func(t *testing.T) {
-			if got := CanonicalizeIP(tt.ip); got != tt.want {
-				t.Errorf("CanonicalizeIP() = %v, want %v", got, tt.want)
+			if got := CanonicalizeIP(ip); got != want {
+				t.Errorf("CanonicalizeIP() = %v, want %v", got, want)
 			}
 		})
 	}

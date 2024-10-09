@@ -37,8 +37,7 @@ func setRateLimitResponseHeaders(lmt *limiter.Limiter, w http.ResponseWriter, to
 func NewLimiter(max float64, tbOptions *limiter.ExpirableOptions) *limiter.Limiter {
 	return limiter.New(tbOptions).
 		SetMax(max).
-		SetBurst(int(math.Max(1, max))).
-		SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
+		SetBurst(int(math.Max(1, max)))
 }
 
 // LimitByKeys keeps track number of request made by keys separated by pipe.
@@ -63,7 +62,7 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 	// ---------------------------------
 	// Filter by remote ip
 	// If we are unable to find remoteIP, skip limiter
-	remoteIP := libstring.RemoteIP(lmt.GetIPLookups(), lmt.GetForwardedForIndexFromBehind(), r)
+	remoteIP := libstring.RemoteIPFromIPLookup(lmt.GetIPLookup(), r)
 	remoteIP = libstring.CanonicalizeIP(remoteIP)
 	if remoteIP == "" {
 		return true
@@ -195,7 +194,7 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 
 // BuildKeys generates a slice of keys to rate-limit by given limiter and request structs.
 func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
-	remoteIP := libstring.RemoteIP(lmt.GetIPLookups(), lmt.GetForwardedForIndexFromBehind(), r)
+	remoteIP := libstring.RemoteIPFromIPLookup(lmt.GetIPLookup(), r)
 	remoteIP = libstring.CanonicalizeIP(remoteIP)
 	path := r.URL.Path
 	sliceKeys := make([][]string, 0)

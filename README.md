@@ -25,6 +25,9 @@ This is a generic middleware to rate-limit HTTP requests.
 
 **v7.x.x:** Replaced `time/rate` with `embedded time/rate` so that we can support more rate limit headers.
 
+**v8.x.x:** Address `RemoteIP` vulnerability concern by replacing it with `RemoteIPFromIPLookup`, an explicit way to pick the IP address.
+
+
 ## Five Minute Tutorial
 
 ```go
@@ -34,6 +37,7 @@ import (
     "net/http"
 
     "github.com/didip/tollbooth/v7"
+    "github.com/didip/tollbooth/v7/limiter"
 )
 
 func HelloHandler(w http.ResponseWriter, req *http.Request) {
@@ -42,7 +46,15 @@ func HelloHandler(w http.ResponseWriter, req *http.Request) {
 
 func main() {
     // Create a request limiter per handler.
-    http.Handle("/", tollbooth.LimitFuncHandler(tollbooth.NewLimiter(1, nil), HelloHandler))
+    lmt := tollbooth.NewLimiter(1, nil)
+
+    // New in version >= 8, you must explicitly define how to pick the IP address.
+    lmt.SetIPLookup(limiter.IPLookup{
+        Name:           "X-Real-IP",
+        IndexFromRight: 0,
+    })
+
+    http.Handle("/", tollbooth.LimitFuncHandler(lmt, HelloHandler))
     http.ListenAndServe(":12345", nil)
 }
 ```
@@ -66,10 +78,24 @@ func main() {
     // every token bucket in it will expire 1 hour after it was initially set.
     lmt = tollbooth.NewLimiter(1, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
 
-    // Configure list of places to look for IP address.
-    // By default it's: "RemoteAddr", "X-Forwarded-For", "X-Real-IP"
-    // If your application is behind a proxy, set "X-Forwarded-For" first.
-    lmt.SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"})
+    // New in version >= 8, you must explicitly define how to pick the IP address.
+    // If IP address cannot be found, rate limiter will not be activated.
+    lmt.SetIPLookup(limiter.IPLookup{
+        // The name of lookup method.
+        // Possible options are: RemoteAddr, X-Forwarded-For, X-Real-IP, CF-Connecting-IP
+        // All other headers are considered unknown and will be ignored.
+        Name:            "X-Real-IP",
+
+        // The index position to pick the ip address from a comma separated list.
+        // The index goes from right to left.
+        //
+        // When there are multiple of the same headers,
+        // we will concat them together in the order of first to last seen.
+        // And then we pick the IP using this index position.
+        IndexFromRight: 0,
+    })
+
+    // In version >= 8, lmt.SetIPLookups and lmt.GetIPLookups are removed.
 
     // Limit only GET and POST requests.
     lmt.SetMethods([]string{"GET", "POST"})
@@ -89,8 +115,7 @@ func main() {
     lmt.RemoveHeaderEntries("X-Access-Token", []string{"limitless-token"})
 
     // By the way, the setters are chainable. Example:
-    lmt.SetIPLookups([]string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}).
-        SetMethods([]string{"GET", "POST"}).
+    lmt.SetMethods([]string{"GET", "POST"}).
         SetBasicAuthUsers([]string{"sansa"}).
         SetBasicAuthUsers([]string{"tyrion"})
     ```
@@ -136,6 +161,12 @@ func main() {
 
     ```go
     lmt := tollbooth.NewLimiter(1, nil)
+
+    // New in version >= 8, you must explicitly define how to pick the IP address.
+    lmt.SetIPLookup(limiter.IPLookup{
+        Name:           "X-Forwarded-For",
+        IndexFromRight: 0,
+    })
 
     // Set a custom message.
     lmt.SetMessage("You have reached maximum request limit.")
