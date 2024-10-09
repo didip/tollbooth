@@ -564,7 +564,10 @@ func (lm *LockMap) Add(key string, incr int64) {
 
 func TestLimitHandlerEmptyHeader(t *testing.T) {
 	lmt := limiter.New(nil).SetMax(1).SetBurst(1)
-	lmt.SetIPLookups([]string{"X-Real-IP", "RemoteAddr", "X-Forwarded-For"})
+	lmt.SetIPLookup(limiter.IPLookup{
+		Name:           "X-Real-IP",
+		IndexFromRight: 0,
+	})
 	lmt.SetMethods([]string{"POST"})
 	lmt.SetHeader("user_id", []string{})
 

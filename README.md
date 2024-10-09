@@ -48,7 +48,7 @@ func main() {
     // Create a request limiter per handler.
     lmt := tollbooth.NewLimiter(1, nil)
 
-    // New in version >= 7, you must explicitly define how to pick the IP address.
+    // New in version >= 8, you must explicitly define how to pick the IP address.
     lmt.SetIPLookup(limiter.IPLookup{
         Name:           "X-Real-IP",
         IndexFromRight: 0,
@@ -78,7 +78,7 @@ func main() {
     // every token bucket in it will expire 1 hour after it was initially set.
     lmt = tollbooth.NewLimiter(1, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
 
-    // New in version >= 7, you must explicitly define how to pick the IP address.
+    // New in version >= 8, you must explicitly define how to pick the IP address.
     // If IP address cannot be found, rate limiter will not be activated.
     lmt.SetIPLookup(limiter.IPLookup{
         // The name of lookup method.
@@ -95,7 +95,7 @@ func main() {
         IndexFromRight: 0,
     })
 
-    // In version >= 7, lmt.SetIPLookups and lmt.GetIPLookups are removed.
+    // In version >= 8, lmt.SetIPLookups and lmt.GetIPLookups are removed.
 
     // Limit only GET and POST requests.
     lmt.SetMethods([]string{"GET", "POST"})
@@ -162,7 +162,7 @@ func main() {
     ```go
     lmt := tollbooth.NewLimiter(1, nil)
 
-    // New in version >= 7, you must explicitly define how to pick the IP address.
+    // New in version >= 8, you must explicitly define how to pick the IP address.
     lmt.SetIPLookup(limiter.IPLookup{
         Name:           "X-Forwarded-For",
         IndexFromRight: 0,
