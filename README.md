@@ -23,7 +23,10 @@ This is a generic middleware to rate-limit HTTP requests.
 
 **v6.x.x:** Replaced `go-cache` with `github.com/go-pkgz/expirable-cache` because `go-cache` leaks goroutines.
 
-**v7.x.x:** Address `RemoteIP` vulnerability concern by replacing it with `RemoteIPFromIPLookup`, an explicit way to pick the IP address.
+**v7.x.x:** Replaced `time/rate` with `embedded time/rate` so that we can support more rate limit headers.
+
+**v8.x.x:** Address `RemoteIP` vulnerability concern by replacing it with `RemoteIPFromIPLookup`, an explicit way to pick the IP address.
+
 
 ## Five Minute Tutorial
 
@@ -146,6 +149,13 @@ func main() {
 
     * `X-Rate-Limit-Request-Remote-Addr` The rejected request `RemoteAddr`.
 
+   Upon both success and rejection [RateLimit](https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-ratelimit-headers) headers are sent:
+
+   * `RateLimit-Limit` The maximum request limit within the time window (1s).
+
+   * `RateLimit-Reset` The rate-limiter time window duration in seconds (always 1s).
+
+   * `RateLimit-Remaining` The remaining tokens.
 
 5. Customize your own message or function when limit is reached.
 
@@ -191,6 +201,8 @@ Sometimes, other frameworks require a little bit of shim to use Tollbooth. These
 * [Negroni](https://github.com/didip/tollbooth_negroni)
 
 ## My other Go libraries
+
+* [ErrStack](https://github.com/didip/errstack): A small library to combine errors and also display filename and line number.
 
 * [Stopwatch](https://github.com/didip/stopwatch): A small library to measure latency of things. Useful if you want to report latency data to Graphite.
 

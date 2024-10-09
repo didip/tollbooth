@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/didip/tollbooth/v6/limiter"
+	"github.com/didip/tollbooth/v7/limiter"
 )
 
 // See: https://github.com/didip/tollbooth/issues/48
@@ -23,9 +23,9 @@ func Test_Issue48_RequestTerminatedEvenOnLowVolumeOnSameIP(t *testing.T) {
 	lmt.SetMethods([]string{"GET"})
 
 	limitReachedCounter := 0
-	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) { limitReachedCounter++ })
+	lmt.SetOnLimitReached(func(http.ResponseWriter, *http.Request) { limitReachedCounter++ })
 
-	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte(`hello world`))
 	}))
 
@@ -77,7 +77,7 @@ func Test_Issue66_CustomRateLimitByHeaderValues(t *testing.T) {
 	customerID1 := "1234"
 	customerID2 := "5678"
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	h := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
 
 	h, allocationLimiter := issue66RateLimiter(h, []string{customerID1, customerID2})
 	testServer := httptest.NewServer(h)
@@ -147,7 +147,7 @@ func Test_Issue91_BrokenSetMethod_DontBlockGet(t *testing.T) {
 
 	// -------------------------------------------------------------------
 
-	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte(`hello world`))
 	}))
 
@@ -178,7 +178,7 @@ func Test_Issue91_BrokenSetMethod_BlockPost(t *testing.T) {
 		})
 
 	limitReachedCounter := 0
-	lmt.SetOnLimitReached(func(w http.ResponseWriter, r *http.Request) {
+	lmt.SetOnLimitReached(func(http.ResponseWriter, *http.Request) {
 		limitReachedCounter++
 	})
 
@@ -189,7 +189,7 @@ func Test_Issue91_BrokenSetMethod_BlockPost(t *testing.T) {
 
 	// -------------------------------------------------------------------
 
-	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := LimitHandler(lmt, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte(`hello world`))
 	}))
 
