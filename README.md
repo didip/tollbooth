@@ -25,7 +25,7 @@ This is a generic middleware to rate-limit HTTP requests.
 
 **v7.x.x:** Replaced `time/rate` with `embedded time/rate` so that we can support more rate limit headers.
 
-**v8.x.x:** Address `RemoteIP` vulnerability concern by replacing it with `RemoteIPFromIPLookup`, an explicit way to pick the IP address.
+**v8.x.x:** Address `RemoteIP` vulnerability concern by replacing `SetIPLookups` with `SetIPLookup`, an explicit way to pick the IP address.
 
 
 ## Five Minute Tutorial
