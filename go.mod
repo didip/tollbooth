@@ -1,4 +1,4 @@
-module github.com/didip/tollbooth/v7
+module github.com/didip/tollbooth/v8
 
 go 1.19
 
