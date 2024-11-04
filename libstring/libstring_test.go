@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/didip/tollbooth/v7/limiter"
+	"github.com/didip/tollbooth/v8/limiter"
 )
 
 func TestStringInSlice(t *testing.T) {

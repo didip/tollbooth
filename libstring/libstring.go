@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/didip/tollbooth/v7/limiter"
+	"github.com/didip/tollbooth/v8/limiter"
 )
 
 // StringInSlice finds needle in a slice of strings.
