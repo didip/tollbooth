@@ -346,3 +346,30 @@ func LimitHandler(lmt *limiter.Limiter, next http.Handler) http.Handler {
 func LimitFuncHandler(lmt *limiter.Limiter, nextFunc func(http.ResponseWriter, *http.Request)) http.Handler {
 	return LimitHandler(lmt, http.HandlerFunc(nextFunc))
 }
+
+// HTTPMiddleware wraps http.Handler with tollbooth limiter
+func HTTPMiddleware(lmt *limiter.Limiter) func(http.Handler) http.Handler {
+	// // set IP lookup only if not set
+	if lmt.GetIPLookup().Name == "" {
+		lmt.SetIPLookup(limiter.IPLookup{Name: "RemoteAddr"})
+	}
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			select {
+			case <-r.Context().Done():
+				http.Error(w, "Context was canceled", http.StatusServiceUnavailable)
+				return
+			default:
+				if httpError := LimitByRequest(lmt, w, r); httpError != nil {
+					lmt.ExecOnLimitReached(w, r)
+					w.Header().Add("Content-Type", lmt.GetMessageContentType())
+					w.WriteHeader(httpError.StatusCode)
+					w.Write([]byte(httpError.Message)) //nolint:gosec // not much we can do here with failed write
+					return
+				}
+				next.ServeHTTP(w, r)
+			}
+		})
+	}
+}
