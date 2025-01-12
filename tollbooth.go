@@ -349,7 +349,7 @@ func LimitFuncHandler(lmt *limiter.Limiter, nextFunc func(http.ResponseWriter, *
 
 // HTTPMiddleware wraps http.Handler with tollbooth limiter
 func HTTPMiddleware(lmt *limiter.Limiter) func(http.Handler) http.Handler {
-	// // set IP lookup only if not set
+	// set IP lookup only if not set
 	if lmt.GetIPLookup().Name == "" {
 		lmt.SetIPLookup(limiter.IPLookup{Name: "RemoteAddr"})
 	}

@@ -25,8 +25,7 @@ This is a generic middleware to rate-limit HTTP requests.
 
 **v7.x.x:** Replaced `time/rate` with `embedded time/rate` so that we can support more rate limit headers.
 
-**v8.x.x:** Address `RemoteIP` vulnerability concern by replacing `SetIPLookups` with `SetIPLookup`, an explicit way to pick the IP address.
-
+**v8.x.x:** Address `RemoteIP` vulnerability concern by replacing `SetIPLookups` with `SetIPLookup`, an explicit way to pick the IP address. New `HTTPMiddleware` function which is compatible with standard routers.
 
 ## Five Minute Tutorial
 
@@ -34,38 +33,43 @@ This is a generic middleware to rate-limit HTTP requests.
 package main
 
 import (
-    "net/http"
+	"net/http"
 
-    "github.com/didip/tollbooth/v8"
-    "github.com/didip/tollbooth/v8/limiter"
+	"github.com/didip/tollbooth/v8/limiter"
 )
 
 func HelloHandler(w http.ResponseWriter, req *http.Request) {
-    w.Write([]byte("Hello, World!"))
+	w.Write([]byte("Hello, World!"))
 }
 
 func main() {
-    // Create a request limiter per handler.
-    lmt := tollbooth.NewLimiter(1, nil)
+	// Create a request limiter per handler.
+	lmt := tollbooth.NewLimiter(1, nil)
 
-    // New in version >= 8, you must explicitly define how to pick the IP address.
-    lmt.SetIPLookup(limiter.IPLookup{
-        Name:           "X-Real-IP",
-        IndexFromRight: 0,
-    })
+	// New in version >= 8, you must explicitly define how to pick the IP address.
+	lmt.SetIPLookup(limiter.IPLookup{
+		Name:           "X-Real-IP",
+		IndexFromRight: 0,
+	})
 
-    http.Handle("/", tollbooth.LimitFuncHandler(lmt, HelloHandler))
-    http.ListenAndServe(":12345", nil)
+	// New in version >= 8, HTTPMiddleware is a standard router compatible alternative to the previously used LimitFuncHandler.
+	http.Handle("/", tollbooth.HTTPMiddleware(lmt)(http.HandlerFunc(HelloHandler)))
+	// Old syntax:
+	// http.Handle("/", tollbooth.LimitFuncHandler(lmt, HelloHandler))
+
+	http.ListenAndServe(":12345", nil)
 }
+
 ```
 
 ## Features
 
 1. Rate-limit by request's remote IP, path, methods, custom headers, & basic auth usernames.
+
     ```go
     import (
         "time"
-    
+
         "github.com/didip/tollbooth/v8"
         "github.com/didip/tollbooth/v8/limiter"
     )
@@ -84,7 +88,7 @@ func main() {
         // The name of lookup method.
         // Possible options are: RemoteAddr, X-Forwarded-For, X-Real-IP, CF-Connecting-IP
         // All other headers are considered unknown and will be ignored.
-        Name:            "X-Real-IP",
+        Name: "X-Real-IP",
 
         // The index position to pick the ip address from a comma separated list.
         // The index goes from right to left.
