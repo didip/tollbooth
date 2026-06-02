@@ -9,16 +9,6 @@ import (
 	"github.com/didip/tollbooth/v8/limiter"
 )
 
-// StringInSlice finds needle in a slice of strings.
-func StringInSlice(sliceString []string, needle string) bool {
-	for _, b := range sliceString {
-		if b == needle {
-			return true
-		}
-	}
-	return false
-}
-
 // RemoteIPFromIPLookup picks an ip address explicitly from limiter.IPLookup criteria.
 // This function is intended to replace RemoteIP function.
 func RemoteIPFromIPLookup(ipLookup limiter.IPLookup, r *http.Request) string {
@@ -42,10 +32,7 @@ func RemoteIPFromIPLookup(ipLookup limiter.IPLookup, r *http.Request) string {
 			ips[i] = strings.TrimSpace(p)
 		}
 
-		ipIndex := len(ips) - 1 - ipLookup.IndexFromRight
-		if ipIndex < 0 {
-			ipIndex = 0
-		}
+		ipIndex := max(len(ips)-1-ipLookup.IndexFromRight, 0)
 
 		return ips[ipIndex]
 	}

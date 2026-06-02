@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -501,9 +502,9 @@ func TestOverrideForResponseWriter(t *testing.T) {
 func checkKeys(t *testing.T, keys []string, expectedKeys [][]string) {
 	for i, keyChunk := range keys {
 		switch {
-		case i == 0 && !isInSlice(keyChunk, expectedKeys[0]):
+		case i == 0 && !slices.Contains(expectedKeys[0], keyChunk):
 			t.Errorf("The (%v) chunk should be remote IP. KeyChunk: %v", i+1, keyChunk)
-		case i == 1 && !isInSlice(keyChunk, expectedKeys[1]):
+		case i == 1 && !slices.Contains(expectedKeys[1], keyChunk):
 			t.Errorf("The (%v) chunk should be request path. KeyChunk: %v", i+1, keyChunk)
 		}
 	}
@@ -511,11 +512,8 @@ func checkKeys(t *testing.T, keys []string, expectedKeys [][]string) {
 	for _, ekeys := range expectedKeys {
 		found := false
 		for _, ekey := range ekeys {
-			for _, key := range keys {
-				if ekey == key {
-					found = true
-					break
-				}
+			if slices.Contains(keys, ekey) {
+				found = true
 			}
 		}
 
@@ -523,15 +521,6 @@ func checkKeys(t *testing.T, keys []string, expectedKeys [][]string) {
 			t.Fatalf("expectedKeys missing: %v", strings.Join(ekeys, " "))
 		}
 	}
-}
-
-func isInSlice(key string, keys []string) bool {
-	for _, sliceKey := range keys {
-		if key == sliceKey {
-			return true
-		}
-	}
-	return false
 }
 
 type LockMap struct {
@@ -609,11 +598,9 @@ func TestLimitHandlerEmptyHeader(t *testing.T) {
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
 
 	// same user_id, should be limited
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 
 		req1, _ := http.NewRequest("POST", "/doesntmatter", nil)
 		req1.Header.Set("X-Real-IP", "2601:7:1c82:4097:59a0:a80b:2841:b8c8")
@@ -649,7 +636,7 @@ func TestLimitHandlerEmptyHeader(t *testing.T) {
 				}
 			}
 		}
-	}()
+	})
 
 	wg.Wait() // Block until go func is done.
 }

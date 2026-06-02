@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/didip/tollbooth/v8/errors"
@@ -76,7 +77,7 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 	if lmtMethodsIsSet {
 		// If request does not contain all of the methods in limiter,
 		// skip limiter
-		requestMethodDefinedInLimiter := libstring.StringInSlice(lmtMethods, r.Method)
+		requestMethodDefinedInLimiter := slices.Contains(lmtMethods, r.Method)
 
 		if !requestMethodDefinedInLimiter {
 			return true
@@ -115,11 +116,8 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 				requestHeadersDefinedInLimiter = true
 				continue
 			}
-			for _, headerValue := range headerValues {
-				if r.Header.Get(headerKey) == headerValue {
-					requestHeadersDefinedInLimiter = true
-					break
-				}
+			if slices.Contains(headerValues, r.Header.Get(headerKey)) {
+				requestHeadersDefinedInLimiter = true
 			}
 		}
 
@@ -156,11 +154,8 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 		requestContextValuesDefinedInLimiter = false
 
 		for contextKey, contextValues := range lmtContextValues {
-			for _, contextValue := range contextValues {
-				if r.Header.Get(contextKey) == contextValue {
-					requestContextValuesDefinedInLimiter = true
-					break
-				}
+			if slices.Contains(contextValues, r.Header.Get(contextKey)) {
+				requestContextValuesDefinedInLimiter = true
 			}
 		}
 
@@ -180,7 +175,7 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 		requestAuthUsernameDefinedInLimiter := false
 
 		username, _, ok := r.BasicAuth()
-		if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
+		if ok && slices.Contains(lmtBasicAuthUsers, username) {
 			requestAuthUsernameDefinedInLimiter = true
 		}
 
@@ -212,7 +207,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 	usernameToLimit := ""
 	if lmtBasicAuthUsersIsSet {
 		username, _, ok := r.BasicAuth()
-		if ok && libstring.StringInSlice(lmtBasicAuthUsers, username) {
+		if ok && slices.Contains(lmtBasicAuthUsers, username) {
 			usernameToLimit = username
 		}
 	}

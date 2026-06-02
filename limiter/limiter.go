@@ -5,10 +5,9 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"golang.org/x/time/rate"
 
 	cache "github.com/go-pkgz/expirable-cache/v3"
-
-	"github.com/didip/tollbooth/v8/internal/time/rate"
 )
 
 // New is a constructor for Limiter.

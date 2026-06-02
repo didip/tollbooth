@@ -97,7 +97,7 @@ func TestMuchHigherMaxRequests(t *testing.T) {
 	lmt := New(nil).SetMax(float64(numRequests)).SetBurst(1)
 	key := "127.0.0.1|/"
 
-	for i := 0; i < numRequests; i++ {
+	for i := range numRequests {
 		time.Sleep(delay)
 		if lmt.LimitReached(key) == true {
 			t.Errorf("N(%v) limit should not be reached.", i)
@@ -116,7 +116,7 @@ func TestMuchHigherMaxRequestsWithCustomTokenBucketTTL(t *testing.T) {
 	lmt := New(&ExpirableOptions{DefaultExpirationTTL: time.Minute}).SetMax(float64(numRequests)).SetBurst(1)
 	key := "127.0.0.1|/"
 
-	for i := 0; i < numRequests; i++ {
+	for i := range numRequests {
 		time.Sleep(delay)
 		if lmt.LimitReached(key) == true {
 			fmt.Printf("N(%v) limit should not be reached.\n", i)

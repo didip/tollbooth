@@ -122,7 +122,7 @@ Expected to receive: %v status code. Got: %v`,
 	request3, _ := http.NewRequest("POST", testServer.URL, nil)
 	request3.Header.Add(issue66HeaderKey, "777")
 
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		response, _ := client.Do(request3)
 
 		if response.StatusCode != http.StatusOK {
@@ -157,7 +157,7 @@ func Test_Issue91_BrokenSetMethod_DontBlockGet(t *testing.T) {
 
 	// We should never reach the limit because we are sending 10 GET requests and
 	// we are only limiting POST requests.
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		start := time.Now()
 
 		rr := httptest.NewRecorder()
@@ -199,7 +199,7 @@ func Test_Issue91_BrokenSetMethod_BlockPost(t *testing.T) {
 
 	// We should reach the limit because we are sending 2 POST requests and
 	// our limiter is 1 POST per second.
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		rr := httptest.NewRecorder()
 		handler.ServeHTTP(rr, req)
 	}

@@ -8,12 +8,6 @@ import (
 	"github.com/didip/tollbooth/v8/limiter"
 )
 
-func TestStringInSlice(t *testing.T) {
-	if StringInSlice([]string{"alice", "dan", "didip", "jason", "karl"}, "brotato") {
-		t.Error("brotato should not be in slice.")
-	}
-}
-
 func TestRemoteIPForwardedFor(t *testing.T) {
 	ipv6 := "2601:7:1c82:4097:59a0:a80b:2841:b8c8"
 
