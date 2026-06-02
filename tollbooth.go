@@ -197,7 +197,7 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 	remoteIP := libstring.RemoteIPFromIPLookup(lmt.GetIPLookup(), r)
 	remoteIP = libstring.CanonicalizeIP(remoteIP)
 	path := r.URL.Path
-	sliceKeys := make([][]string, 0)
+	sliceKeys := make([][]string, 0, 1)
 
 	lmtMethods := lmt.GetMethods()
 	lmtHeaders := lmt.GetHeaders()

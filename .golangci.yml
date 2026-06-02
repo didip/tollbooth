@@ -1,33 +1,40 @@
+version: "2"
 linters:
+  default: none
   enable:
-    - revive
-    - govet
-    - unconvert
-    - megacheck
-    - gas
-    - gocyclo
     - dupl
+    - gochecknoinits
+    - gocritic
+    - gocyclo
+    - gosec
+    - govet
+    - ineffassign
     - misspell
+    - nakedret
+    - prealloc
+    - revive
+    - staticcheck
+    - unconvert
     - unparam
     - unused
-    - typecheck
-    - ineffassign
-    - stylecheck
-    - gochecknoinits
-    - exportloopref
-    - gocritic
-    - nakedret
-    - gosimple
-    - prealloc
-  fast: false
-  disable-all: true
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - dupl
-    - text: "Errors unhandled"
-      linters:
-        - gosec
-  exclude-use-default: false
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - dupl
+        path: _test\.go
+      - linters:
+          - gosec
+        text: Errors unhandled
+    paths:
+      - internal/time/rate
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

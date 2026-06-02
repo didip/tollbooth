@@ -9,6 +9,7 @@ type ExpirableOptions struct {
 	DefaultExpirationTTL time.Duration
 
 	// How frequently expire job triggers
+	//
 	// Deprecated: not used anymore
 	ExpireJobInterval time.Duration
 }
