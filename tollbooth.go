@@ -139,8 +139,7 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 		requestContextValuesDefinedInLimiter := false
 
 		for contextKey := range lmtContextValues {
-			reqContextValue := fmt.Sprintf("%v", r.Context().Value(contextKey))
-			if reqContextValue != "" {
+			if r.Context().Value(contextKey) != nil {
 				requestContextValuesDefinedInLimiter = true
 				break
 			}
@@ -157,7 +156,7 @@ func ShouldSkipLimiter(lmt *limiter.Limiter, r *http.Request) bool {
 
 		for contextKey, contextValues := range lmtContextValues {
 			for _, contextValue := range contextValues {
-				if r.Header.Get(contextKey) == contextValue {
+				if fmt.Sprintf("%v", r.Context().Value(contextKey)) == contextValue {
 					requestContextValuesDefinedInLimiter = true
 					break
 				}
