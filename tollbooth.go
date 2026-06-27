@@ -290,6 +290,11 @@ func BuildKeys(lmt *limiter.Limiter, r *http.Request) [][]string {
 // LimitByRequest builds keys based on http.Request struct,
 // loops through all the keys, and check if any one of them returns HTTPError.
 func LimitByRequest(lmt *limiter.Limiter, w http.ResponseWriter, r *http.Request) *errors.HTTPError {
+	// Apply the same default IP lookup as HTTPMiddleware does, so LimitHandler-based
+	// usage does not silently bypass the limiter when SetIPLookup was not called.
+	if lmt.GetIPLookup().Name == "" {
+		lmt.SetIPLookup(limiter.IPLookup{Name: "RemoteAddr"})
+	}
 	setResponseHeaders(lmt, w, r)
 
 	shouldSkip := ShouldSkipLimiter(lmt, r)
