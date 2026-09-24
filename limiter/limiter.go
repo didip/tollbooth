@@ -9,6 +9,7 @@ import (
 	cache "github.com/go-pkgz/expirable-cache/v3"
 
 	"github.com/didip/tollbooth/v8/internal/time/rate"
+	"github.com/didip/tollbooth/v8/limiter/store"
 )
 
 // New is a constructor for Limiter.
@@ -102,6 +103,10 @@ type Limiter struct {
 
 	// Map of limiters with TTL
 	tokenBuckets cache.Cache[string, *rate.Limiter]
+
+	// Optional shared counter store. When non-nil, limit decisions are
+	// delegated to it instead of the local tokenBuckets cache.
+	sharedStore store.Store
 
 	// Ignore URL on the rate limiter keys
 	ignoreURL bool
@@ -345,6 +350,29 @@ func (l *Limiter) GetForwardedForIndexFromBehind() int {
 	return l.forwardedForIndex
 }
 
+// SetStore is thread-safe way of setting an optional shared counter store.
+// When store is non-nil, limit decisions are delegated to it instead of the
+// local token buckets, so multiple Limiter instances (for example, behind a
+// load balancer) can share one budget. When store is nil, tollbooth uses its
+// default in-process token buckets.
+func (l *Limiter) SetStore(sharedStore store.Store) *Limiter {
+	l.Lock()
+	l.sharedStore = sharedStore
+	l.Unlock()
+
+	return l
+}
+
+// GetStore is thread-safe way of getting the optional shared counter store.
+// It returns nil when no store is set (the default), in which case the
+// local token buckets are used.
+func (l *Limiter) GetStore() store.Store {
+	l.RLock()
+	defer l.RUnlock()
+
+	return l.sharedStore
+}
+
 // SetMethods is thread-safe way of setting list of HTTP Methods to limit (GET, POST, PUT, etc.).
 func (l *Limiter) SetMethods(methods []string) *Limiter {
 	l.Lock()
@@ -581,6 +609,11 @@ func (l *Limiter) RemoveContextValuesEntries(contextValue string, entriesForRemo
 }
 
 func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
+	if sharedStore := l.GetStore(); sharedStore != nil {
+		// A shared counter store was configured: delegate the decision to it.
+		return !sharedStore.Allow(key, l.GetMax(), l.GetBurst(), tokenBucketTTL)
+	}
+
 	lmtMax := l.GetMax()
 	lmtBurst := l.GetBurst()
 	l.Lock()
