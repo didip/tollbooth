@@ -62,6 +62,20 @@ func main() {
 
 ```
 
+## Shared counter store (optional)
+
+By default each tollbooth instance keeps its counters in the local process, so instances behind a load balancer each enforce their own budget (see [issue #64](https://github.com/didip/tollbooth/issues/64)).
+
+Since version >= 8, `Limiter.SetStore` accepts a `limiter/store.Store` so multiple instances can enforce one shared budget. The repository ships a Redis implementation as a separate Go module under [`store/redis`](./store/redis):
+
+```go
+import redisstore "github.com/didip/tollbooth/v8/store/redis"
+
+lmt.SetStore(redisstore.New(rdb)) // rdb is a *redis.Client from github.com/redis/go-redis/v9
+```
+
+Note: the store enforces a fixed window per key, which does not reproduce the local token bucket's burst smoothing. It fails open on Redis errors by default (`redisstore.WithFailOpen(false)` opts into fail-closed).
+
 ## Features
 
 1. Rate-limit by request's remote IP, path, methods, custom headers, & basic auth usernames.
